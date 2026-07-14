@@ -230,6 +230,154 @@
               gap callouts populate, cycleSkill edits persist, Coach
               signal carries 5 skill-risk items, 10/10 pages render with
               0 runtime errors.
+  HR Module v85 - 2026-07-12 - TERRY QA ROUND: FIVE FIXES.
+            Terry played through the module and reported six issues.
+            Five fixed here; the sixth (P&D settings tab) is a
+            separate module and already in flight.
+            1. MODAL FIELDS NO LONGER DISAPPEAR ON TYPING (Request time
+              off Notes, Adjust pay Reason / Note, Assign asset Asset
+              name / Notes). Root cause: the a11y MutationObserver's
+              _a11yFocus refocused modal-root on every mutation. When
+              applyA11y touched an attribute on any descendant
+              (assigning scope="col", random label-for ids, dialog
+              role), the observer re-fired and yanked focus back to
+              the first focusable input in the modal - the field the
+              user was typing in vanished from under them. Fix: only
+              refocus when addedNodes contains an element node at the
+              modal-root or panel-root level (i.e. a modal actually
+              opened). Attribute mutations no longer trigger focus.
+              One fix covers three of Terry's items.
+            2. CONTACT AND EMERGENCY CONTACT INLINE-EDITABLE FROM THE
+              PROFILE PERSONAL TAB. Terry could not edit these; the
+              tab rendered read-only metaRows and the profile Edit
+              button exposed only work email / phone. Personal tab
+              now renders Personal email, Work phone, Mobile phone,
+              Address, and the three Emergency Contact fields as
+              inline inputs for HR users. Blur commits through
+              updatePersonField (existing v31 contract) and a new
+              parallel updateEmergencyContactField for nested
+              p.emergencyContact.<field>. Enter blurs. Non-HR
+              viewers still see the read-only summary the tab
+              provided before.
+            3. TIME OFF USED REPORT TOTALS BY EMPLOYEE. Terry: "the
+              report just populates alphabetically and doesn't total
+              the approved." Rebuilt to group by person, sort each
+              person's records newest-first, and emit a SUBTOTAL
+              (approved) row per employee with type breakdown and
+              total approved hours. Declined and pending do not count
+              toward the subtotal (they never deducted from the
+              balance). Groups sorted by last name.
+            4. ASSETS ROW: RETURN AND DELETE VISIBLE ON THE ROW.
+              Terry could not find where to delete an asset - Edit
+              was the only affordance and Delete lived one modal deep.
+              Row now shows Return (only while status=assigned), Edit,
+              and a red Delete button, all one click, all HR-gated.
+              Return marks status=returned + returnedDate=today and
+              rerenders the drawer. Delete is unchanged (confirm +
+              remove).
+            - HR_STORAGE_VERSION NOT bumped (stays v82); additive
+              function additions and UI edits only, no data-model
+              change.
+            Validation: audit v3.11 Sections A-P exit 0; render_check
+              PASS; node --check clean; 0 em-dashes outside title;
+              style-block integrity PASS. Terry can retest the five
+              items directly.
+  HR Module v84 - 2026-07-12 - CANON v2.2 + SMB COMPONENTS v1 SWEEP
+            (audit v3.11, Sections A-P). The Standards moved past HR's
+            v2.1 sweep: canon v2.2 (Shared Tag Pill v1, D-100) landed
+            July 9 and the SMB Components v1 locked block (D-102)
+            landed July 10, putting HR back on both force-sweep
+            queues. This is the queued next-touch sweep.
+            1. CANON v2.2 SWEPT IN. Locked canon block replaced
+              verbatim from source; markers renamed v2.1 -> v2.2;
+              Section F byte-exact against the v2.2 lock a210e4ce.
+              The block adds the shared .tag base class (rounded 12px
+              pill silhouette, identical to .chip; colour applied
+              from the Category or Progression palette at use).
+            2. SMB COMPONENTS v1 PASTED after canon and chrome;
+              Section P byte-exact against the a11a671f lock. The
+              block owns page titles, cards, tabs, the button family,
+              filter-bar inputs, and the goal-row classes.
+            3. MODULE DUPLICATES REMOVED so the locked blocks win the
+              cascade (the CRM v1.58 full-cascade lesson applied): 12
+              module-CSS rules deleted (.card base, .pg-sub x2, .btn
+              base + hover, .btn-sm, .btn-primary/.btn-gold + hovers,
+              .btn-blu + hover, .btn-red, .tg). Kept: HR extensions
+              the block does not own (.card.has-hd, .card.acc*, .card-
+              hd compounds, dashboard-grid card rules). Full-cascade
+              verification: 0 leftover bare block-owned selectors in
+              module CSS.
+            4. .tg RENAMED TO CANON .tag per D-100: the squared 4px
+              team pill class is deleted and its two markup usages
+              render on the canon .tag silhouette (team identity
+              colours stay inline, dynamic-build).
+            5. COMPANION TOKENS added to the module :root for block
+              references not previously defined: --bluh #1d4ed8 and
+              --reds #fca5a5 (VSP reference values, copied exact).
+            - HR comes OFF the canon v2.2 + Components v1 sweep queue.
+            - HR_STORAGE_VERSION NOT bumped (stays v82): CSS-only
+              sweep, no data-model change.
+            Validation: audit v3.11 Sections A-P exit 0 (F byte-exact
+              a210e4ce, G d81054c0, I 37ba3a8f, P a11a671f);
+              render_check PASS; node --check clean; 0 em-dashes
+              outside title; style-block integrity PASS; the v83
+              Step 2 functional probe re-run green (23 checks: seeds,
+              checklist filtering, packet email fill, submit gates,
+              awaiting/nudge, template editor, role toggle,
+              requisition migration).
+  HR Module v83 - 2026-07-12 - STEP 2 WALKED: PRE-HIRE PACKET AS A
+            GUIDED SEND/RECEIVE FLOW. Dave: walk step 2 the way step 1
+            was walked; the step must assist the user, explain exactly
+            what to do, and be impossible to leave until complete. The
+            old surface was two today-stamped checkboxes that recorded
+            the work without helping do it.
+            1. SEND THE PACKET: the conduct surface leads with the
+              three packet contents (employment application with its
+              consent clause, job description, process overview) and a
+              Send packet email button that opens the mail client with
+              the standard text prefilled (Send to Client Placeholder
+              Pattern v1; real send arrives with the Email + Calendar
+              Integration Backend), records packetSentDate, logs the
+              touch on the candidate timeline, and toasts the
+              attach-before-sending reminder. The subject, body, and
+              samples line are tenant-editable in the Application
+              template modal with {FIRST} {ROLE} {COMPANY} {SENDER}
+              {SAMPLES} placeholders; company name reads
+              window.SMB_TENANT.orgName per the tenant-name rule.
+              Packet sent is an editable date field (backdating and
+              out-of-product sends stay honest), not a toggle.
+            2. RECEIVE THE PACKET: three dated receipt facts. Signed
+              application (same c.applicationSignedDate the digital
+              check reads; unchanged consent linkage), resume on file
+              (candidate-level c.resumeReceivedDate; counts if it
+              arrived earlier; Add Candidate gains a Resume already on
+              file checkbox), and project samples
+              (iv.answers.samplesReceivedDate) shown only when the
+              role requires them.
+            3. PER-ROLE SAMPLES REQUIREMENT: new requisition field
+              samplesRequired with an Application packet card on the
+              role record (HR toggles it). Seeded true for Site
+              Superintendent (req1) and Project Manager (req3), false
+              for Estimator (req2). Idempotent load pre-pass defaults
+              the field on stored requisitions from the role title
+              once; the toggle is authoritative after.
+            4. GATE TIGHTENED: submit now requires packet sent +
+              signed application + resume, plus samples when the role
+              requires them. Checklist split to four auto items
+              (samples item filtered out per role); kanban chips, card
+              dots, and matrix counts pick the new counts up
+              generically through _stageChecklistState.
+            5. GUARDRAILS: packet sent with no signed application
+              shows an awaiting-packet chip with days-since-sent and a
+              Send a nudge follow-up email; clearing the signed
+              application after the digital check has run warns that
+              it invalidates the consent the check ran on.
+            - Seed c1 gains resume + samples receipt dates so the
+              mid-pipeline seed does not lie under the tightened gate.
+            - HR_STORAGE_VERSION intentionally NOT bumped (stays v82):
+              additive fields only, no reseed needed, per the Storage
+              Version Policy (a version bump wipes tester data in this
+              build and is reserved for true data-model breaks).
   HR Module v82 - 2026-07-05 - CANON v2.1 SWEEP + STATUS CHIP CANON
             CONFORMANCE + AUDIT v3.9. Dave asked whether a full audit
             against VSP and BD per the Standards had been done. It had
@@ -3562,7 +3710,7 @@
 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-/* === SMB CANON v2.1 BEGIN === DO NOT EDIT - change canon source instead === */
+/* === SMB CANON v2.2 BEGIN === DO NOT EDIT - change canon source instead === */
 :root {
   /* ─── Type scale (locked) ────────────────────────────────────────── */
   --fz-xs:    11px;
@@ -3625,15 +3773,23 @@
   --overlay-dark-04:  rgba(0,0,0,0.04);
 }
 
-/* Status chip canon. Used across every module for status indicators.
-   Semantics locked (Standards v2.32 Status Chip Canon v1, Decision Log D-85):
+/* Status chip canon + Shared Tag Pill v1.
+   .chip (Standards v2.32 / D-85) and .tag (Standards v2.36 / D-100) share the same locked
+   silhouette: rounded 12px pill, 1px border, inline-flex, weight 600. Only the colour source
+   differs. .chip pulls from the status palette via .c-<color> semantic modifiers below; .tag
+   pulls from the Category palette (--cat-*) or the Progression palette (--pg-*) at application
+   time. No module hand-rolls a different pill shape - no squared tags, no per-module radius,
+   no inline raw-hex on pill classes.
+   Status semantics locked (v2.32 Status Chip Canon v1):
    - c-red   = overdue / expired / off-track / below-market / decline
    - c-amb   = due soon / expiring within 90 days / at-risk / above-market / watch
    - c-grn   = current / valid / on-track / at-market / proceed
    - c-blu   = info / neutral / category / stage-in-progress
    - c-gry   = no data / N/A / not on file
-   VSP_Module_v8.html is the visual reference. */
+   VSP_Module_v8.html is the visual reference for chips.
+   VSP status chips + Company category tag = reference for shared pill silhouette. */
 .chip{display:inline-flex;align-items:center;padding:3px 8px;border-radius:12px;font-weight:600;font-size:var(--fz-base);white-space:nowrap;border:1px solid transparent}
+.tag{display:inline-flex;align-items:center;padding:3px 8px;border-radius:12px;font-weight:600;font-size:var(--fz-body);white-space:nowrap;border:1px solid transparent}
 .c-grn{background:var(--grnb);color:var(--grnt);border-color:var(--grn)}
 .c-amb{background:var(--ambb);color:var(--ambt);border-color:var(--amb)}
 .c-red{background:var(--redb);color:var(--redt);border-color:var(--red)}
@@ -3766,7 +3922,7 @@ table th, .card-body table th, .tbl-wrap table th {
   font-size: var(--fz-xs);
 }
 .settings-note { color: var(--txd); font-style: italic; }
-/* === SMB CANON v2.1 END === */
+/* === SMB CANON v2.2 END === */
 
 /* === SMB SHELL CHROME v1 BEGIN === DO NOT EDIT - change chrome source instead === */
 /* Companion tokens (sidebar line, gold pill bg/ink). Canon tokens used as-is. */
@@ -3869,6 +4025,123 @@ summary:focus-visible,
 }
 /* === SHELL CHROME v1 END === */
 
+/* === SMB COMPONENTS v1 BEGIN === DO NOT EDIT - change SMB Components source instead === */
+/* SMB Components v1 (Standards v2.38 / D-102).
+   One locked source of truth for shared UI components, extracted from
+   VSP_Module_v22: buttons, cards, page titles, tabs, filter bar inputs, and
+   the Goals-list row. Every module pastes this block after the SMB CANON and
+   SMB SHELL CHROME blocks. Byte-checked by audit Section P against
+   COMPONENTS_SHA256.
+
+   Chrome-model resolution. This block adopts VSP's inline dark titles as the
+   canonical rendering: .pg-title renders inline at --fz-3xl; .card-title stays
+   dark on neutral card headers. Modules that previously hid .pg-title in favor
+   of a topbar page title, or whitened .card-title on coloured card headers,
+   drop those overrides on the v1 sweep and adopt this block's rendering.
+
+   Goals-list row. The .goal-row class set is the extracted form of VSP v22
+   goalRow() inline styles. Cosmetics live in classes; state-dependent choices
+   are expressed via modifier classes (.off, .cancelled, .done, .muted,
+   .on-track, .all-done, .last). Per-value inline styles remain inline (progress
+   bar width percentage; menu positioning); shared cosmetics do not.
+
+   Not included at v1. .smb-empty (VSP v22 does not carry it as a distinct
+   class set; deferred to a future revision when VSP adopts an empty-state
+   component). Modules keep their current empty states until then.
+
+   --module-accent stays a per-module :root token (each module picks its own
+   restrained hue; VSP #5b8fd6 is the reference). This block does not lock
+   --module-accent because the token exists to differentiate modules; it locks
+   --btn-txt because button text colour is a component property. */
+
+:root {
+  --btn-txt: #374151;
+}
+
+/* PAGE HEADER */
+.pg-title{font-size:var(--fz-3xl);font-weight:700;margin-bottom:4px;letter-spacing:-.01em;color:var(--txt)}
+.pg-sub{color:var(--txm);margin-bottom:20px}
+
+/* CARDS */
+.card{background:var(--sur);border:1px solid var(--brd);border-radius:8px;padding:16px;margin-bottom:14px}
+.card-body{padding:16px;font-size:var(--fz-lg);line-height:1.5}
+.card-title{font-size:var(--fz-lg);font-weight:600;color:var(--txt)}
+
+/* TABS */
+.tab-bar{display:flex;border-bottom:2px solid var(--brd);margin-bottom:16px}
+.tab{padding:8px 18px;font-size:var(--fz-md);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--txm);margin-bottom:-2px;font-weight:500;font-family:inherit}
+.tab.active{color:var(--blu);border-bottom-color:var(--blu);font-weight:600}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:6px;font-size:var(--fz-body);font-weight:600;cursor:pointer;border:1px solid var(--brd);background:var(--sur);color:var(--btn-txt);font-family:inherit;transition:all .12s;white-space:nowrap}
+.btn:hover{background:var(--sur2)}
+.btn-sm{padding:6px 12px}
+.btn-primary,.btn-gold{background:var(--gp);color:#fff;border-color:var(--gp)}
+.btn-primary:hover,.btn-gold:hover{background:var(--gpd);border-color:var(--gpd)}
+.btn-blu{background:var(--blu);color:#fff;border-color:var(--blu)}
+.btn-blu:hover{background:var(--bluh);border-color:var(--bluh)}
+.btn-red{background:var(--redb);color:var(--red);border-color:var(--reds)}
+
+/* FILTER BAR */
+.filter-bar input,.filter-bar select{font-size:var(--fz-body);font-family:inherit}
+
+/* GOALS-LIST ROW (implements Goals Row Status Tint v1 from Standards v2.37) */
+.goal-row{background:var(--sur);border-bottom:0.5px solid var(--brd)}
+.goal-row.last{border-bottom:none}
+.goal-row.off{background:var(--redb);border-left:3px solid var(--red)}
+.goal-row.cancelled{background:var(--sur2)}
+.goal-row-main{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer}
+.goal-title{flex:1;min-width:0;font-size:var(--fz-lg);font-weight:500;color:var(--txt);cursor:pointer}
+.goal-title.off{color:var(--red)}
+.goal-title.muted{color:var(--txm)}
+.goal-title.done{text-decoration:line-through}
+.goal-ms{font-size:var(--fz-lg);color:var(--txm);white-space:nowrap;min-width:70px;text-align:right}
+.goal-ms.all-done{color:var(--grn)}
+.goal-progress{display:flex;align-items:center;gap:5px;min-width:80px;cursor:pointer}
+.goal-progress-bar{flex:1;height:5px;background:var(--brd);border-radius:3px;min-width:44px}
+.goal-progress-fill{height:100%;border-radius:3px;transition:width .2s}
+.goal-progress-fill.on-track{background:var(--grn)}
+.goal-progress-fill.off-track{background:var(--red)}
+.goal-progress-fill.done{background:var(--blu)}
+.goal-progress-fill.cancelled{background:var(--txm)}
+.goal-due{font-size:var(--fz-lg);color:var(--txm);white-space:nowrap;min-width:44px;text-align:right}
+.goal-status-select{width:98px;font-size:var(--fz-base);padding:3px 5px;border-width:1.5px;border-style:solid;border-radius:5px;font-weight:500;cursor:pointer;font-family:inherit}
+.goal-status-select.on-track{background:var(--grnb);color:var(--grnt);border-color:var(--grn)}
+.goal-status-select.off-track{background:var(--redb);color:var(--redt);border-color:var(--red)}
+.goal-status-select.done{background:var(--blub);color:var(--blut);border-color:var(--blu)}
+.goal-status-select.cancelled{background:var(--sur2);color:var(--txm);border-color:var(--brd)}
+.goal-ctx{width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;color:var(--txm);font-size:var(--fz-lg)}
+.goal-ctx.open{background:var(--sur2)}
+.goal-ctx-menu{position:fixed;background:var(--sur);border:1px solid var(--brd);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.15);z-index:9000;min-width:220px;padding:4px 0}
+.goal-expand{padding:0 14px 12px 36px;background:var(--sur2);border-top:0.5px solid var(--brd)}
+/* === SMB COMPONENTS v1 END === */
+
+
+/* v85: inline-edit input inside the profile Personal tab's Contact
+   and Emergency Contact rows. Sits inside .metar > .metar-v so it
+   reads like the value it replaces; only the border shows up on
+   hover / focus so the row still scans as a fact sheet, not a
+   form. Commits on blur (see metaEditRow / metaEditEcRow). */
+.meta-edit-i{
+  width:100%;
+  font:inherit;
+  color:var(--txt);
+  background:transparent;
+  border:1px solid transparent;
+  border-radius:4px;
+  padding:2px 6px;
+  margin:-2px -6px;
+  transition:border-color .1s, background .1s;
+}
+.meta-edit-i:hover{ border-color:var(--brd); }
+.meta-edit-i:focus{
+  outline:none;
+  border-color:var(--blu);
+  background:var(--sur);
+}
+.meta-edit-i::placeholder{ color:var(--txd); }
+
+
 /* v50: Card Grid v1 header alignment override (module-level; chrome
    revision candidate). The locked chrome .card-hd uses
    justify-content:space-between, which pushes the title to the RIGHT
@@ -3954,7 +4227,9 @@ summary:focus-visible,
   --circle-col: var(--brd);
   --line-after: var(--brd);
   --line-before: var(--brd);
-  --module-accent: #3f9d8a; /* v45: HR = teal. Distinct from VSP blue #5b8fd6, CRM #c0663f, BD #8a6fb8; not confusable with status --grn */
+  --module-accent: #3f9d8a;
+  --bluh: #1d4ed8;      /* Components v1 .btn-blu:hover companion (VSP reference value) */
+  --reds: #fca5a5;      /* Components v1 .btn-red border companion (VSP reference value) */ /* v45: HR = teal. Distinct from VSP blue #5b8fd6, CRM #c0663f, BD #8a6fb8; not confusable with status --grn */
 
   /* Border-radius tokens */
   --r-card: 8px;
@@ -4067,11 +4342,11 @@ summary:focus-visible,
 .main{flex:1;display:flex;flex-direction:column;min-width:0}
 .page{flex:1;overflow-y:auto;padding:24px;background:var(--bg);animation:fadeIn .15s ease;font-size:var(--fz-lg)}
 @keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
-.card{background:var(--sur);border:1px solid var(--brd);border-radius:var(--r-card);padding:16px;margin-bottom:14px}
+
 
 /* Page title chrome (canon defines typography) */
 .pg-title{margin-bottom:4px}
-.pg-sub{margin-bottom:18px}
+
 
 /* Section overline (canon defines typography) */
 .sec{margin-bottom:9px;display:flex;align-items:center;justify-content:space-between}
@@ -4122,16 +4397,16 @@ summary:focus-visible,
 .tbl tr:last-child td{border-bottom:none}
 
 /* Buttons (canon sets font-size + weight; HR adds layout/colors) */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--r-input);cursor:pointer;border:1px solid var(--brd);background:var(--sur);color:var(--txt-button);font-family:inherit;transition:all .12s;white-space:nowrap}
-.btn:hover{background:var(--sur2)}
-.btn-primary,.btn-gold{background:var(--gp);color:#fff;border-color:var(--gp)}
-.btn-primary:hover,.btn-gold:hover{background:var(--gpd);border-color:var(--gpd)}
-.btn-blu{background:var(--blu);color:#fff;border-color:var(--blu)}
-.btn-blu:hover{background:var(--blud);border-color:var(--blud)}
-.btn-red{background:var(--redb);color:var(--red);border-color:var(--red-brd)}
+
+
+
+
+
+
+
 .btn-ghost{background:transparent;color:var(--txt);border-color:var(--brd)}
 .btn-ghost:hover{background:var(--sur2)}
-.btn-sm{padding:6px 12px}
+
 
 /* Stat tile */
 .stat{background:var(--sur2);border-radius:var(--r-input);padding:12px;text-align:center;border:1px solid var(--brd)}
@@ -4139,7 +4414,7 @@ summary:focus-visible,
 
 /* Team tags */
 .tt{display:flex;gap:4px;flex-wrap:wrap}
-.tg{display:inline-flex;padding:1px 7px;border-radius:4px;font-size:var(--fz-xs);font-weight:600;background:var(--cat-brzb);color:var(--cat-brz);border:1px solid var(--brz-brd)}
+
 
 /* Avatars */
 .av-base{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-weight:700;flex-shrink:0;font-family:inherit}
@@ -4836,7 +5111,7 @@ tr:hover .hb-id{background:var(--sur2)}
   .card{box-shadow:none !important;border:1px solid var(--brd) !important;break-inside:avoid;background:var(--sur) !important}
   /* Page-title sizing for paper */
   .pg-title{font-size:var(--fz-3xl) !important;color:var(--txt) !important}
-  .pg-sub{color:var(--txm) !important}
+  
   /* Allow page breaks between top-level sections */
   .org-grid > *{break-inside:avoid}
   /* Print-friendly KPIs */
@@ -7405,9 +7680,33 @@ function _a11yFocus(node){ try{ var f=node.querySelector('input,select,textarea,
   try{
     var pc=document.getElementById('page-content'), mr=document.getElementById('modal-root'), pr=document.getElementById('panel-root');
     applyA11y(document);
+    /* v85: the observer used to call _a11yFocus on every mutation to
+       modal-root or panel-root. When applyA11y touched an attribute on
+       any descendant (adding scope="col", assigning random label-for
+       ids, tagging the dialog role), the observer re-fired and yanked
+       focus back to the first focusable input in the modal - which
+       looked to the user as if the field they were typing in
+       disappeared. Focus-on-open belongs to added nodes only; run
+       _a11yFocus only when addedNodes contains an element (i.e., a
+       modal actually opened), not on attribute changes. This fixes
+       Notes textareas disappearing on typing in Request time off,
+       Adjust pay, Assign asset, and any other modal with a text field
+       past the first one. */
     var obs=new MutationObserver(function(muts){
       applyA11y(document);
-      muts.forEach(function(m){ if(m.target && (m.target.id==='modal-root'||m.target.id==='panel-root') && m.addedNodes && m.addedNodes.length) _a11yFocus(m.target); });
+      muts.forEach(function(m){
+        if(m.type !== 'childList') return;
+        if(!m.addedNodes || !m.addedNodes.length) return;
+        if(!m.target || (m.target.id !== 'modal-root' && m.target.id !== 'panel-root')) return;
+        // Only refocus if an element node (a modal or panel body) was
+        // added at the root level. Text nodes and internal-subtree
+        // mutations do not qualify.
+        var addedEl = false;
+        for(var i=0;i<m.addedNodes.length;i++){
+          if(m.addedNodes[i].nodeType === 1){ addedEl = true; break; }
+        }
+        if(addedEl) _a11yFocus(m.target);
+      });
     });
     if(pc) obs.observe(pc,{childList:true,subtree:true});
     if(mr) obs.observe(mr,{childList:true,subtree:true});
@@ -7555,7 +7854,7 @@ function renderDirectory(){
       if(p.status !== 'active') chips.push('<span class="chip '+statusChipClass(p.status)+'" style="font-size:var(--fz-xs);padding:1px 6px">'+personStatusLabel(p)+'</span>');
       var teamTags = (p.teams||[]).map(function(tid){
         var n = teamName(tid); if(!n) return '';
-        return '<span class="tg" style="background:'+teamColor(tid)+'15;color:'+teamColor(tid)+';border:1px solid '+teamColor(tid)+'40">'+escapeHTML(n)+'</span>';
+        return '<span class="tag" style="background:'+teamColor(tid)+'15;color:'+teamColor(tid)+';border:1px solid '+teamColor(tid)+'40">'+escapeHTML(n)+'</span>';
       }).join('');
       var pref = p.preferredName ? ' <span class="pcard-pref">('+escapeHTML(p.preferredName)+')</span>' : '';
       var kebabBtn = canEdit ? '<button class="pcard-kebab" onclick="event.stopPropagation();openArchive(\''+p.id+'\')" title="Offboard"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 8v13a2 2 0 01-2 2H5a2 2 0 01-2-2V8M1 3h22v5H1zM10 12h4"/></svg></button>' : '';
@@ -7805,7 +8104,7 @@ function renderTabOverview(p, canHR){
   h += metaRow('Department', p.department?'<span class="chip c-blu">'+escapeHTML(p.department)+'</span>':'-');
   h += metaRow('Teams', (p.teams||[]).map(function(tid){
     var t = teamsData.find(function(x){return x.id===tid});
-    return t?'<span class="tg" style="background:'+t.color+'15;color:'+t.color+';border:1px solid '+t.color+'40">'+escapeHTML(t.name)+'</span>':'';
+    return t?'<span class="tag" style="background:'+t.color+'15;color:'+t.color+';border:1px solid '+t.color+'40">'+escapeHTML(t.name)+'</span>':'';
   }).join(' ') || '-');
   h += metaRow('Status', '<span class="chip '+statusChipClass(p.status)+'">'+personStatusLabel(p)+'</span>');
   h += metaRow('Start date', p.startDate?fmtD(p.startDate):'-');
@@ -7841,21 +8140,32 @@ function renderTabContact(p, canHR){
 
   h += '<div class="sec" style="margin-top:14px">Contact</div>';
   h += '<div class="card">';
-  h += metaRow('Work email', p.email?'<a href="mailto:'+escapeHTML(p.email)+'" style="color:var(--blu);text-decoration:none">'+escapeHTML(p.email)+'</a>':'-');
-  if(canHR) h += metaRow('Personal email', p.personalEmail?escapeHTML(p.personalEmail):'-');
-  h += metaRow('Work phone', p.phone?escapeHTML(p.phone):'-');
   if(canHR){
-    h += metaRow('Mobile phone', p.mobile?escapeHTML(p.mobile):'-');
-    h += metaRow('Address', p.address?escapeHTML(p.address):'-');
+    /* v85: contact fields inline-editable for HR (Terry could not edit
+       these; the Personal tab rendered read-only metaRows and the Edit
+       button only exposed work email / phone). Personal email,
+       mobile, and address now editable directly here. Blur commits
+       through updatePersonField; typing does not steal focus (v85
+       observer fix). */
+    h += metaEditRow(p.id, 'Work email',    'email',        p.email,        'email',  'name@lidahomes.ca');
+    h += metaEditRow(p.id, 'Personal email','personalEmail',p.personalEmail,'email',  'name@example.com');
+    h += metaEditRow(p.id, 'Work phone',    'phone',        p.phone,        'tel',    '250-555-0100');
+    h += metaEditRow(p.id, 'Mobile phone',  'mobile',       p.mobile,       'tel',    '250-555-0100');
+    h += metaEditRow(p.id, 'Address',       'address',      p.address,      'text',   'Street, City, Province');
+  } else {
+    h += metaRow('Work email', p.email?'<a href="mailto:'+escapeHTML(p.email)+'" style="color:var(--blu);text-decoration:none">'+escapeHTML(p.email)+'</a>':'-');
+    h += metaRow('Work phone', p.phone?escapeHTML(p.phone):'-');
   }
   h += '</div>';
   if(canHR){
     h += '<div class="sec" style="margin-top:14px">Emergency contact</div>';
     h += '<div class="card">';
     var ec = p.emergencyContact || {};
-    h += metaRow('Name', ec.name?escapeHTML(ec.name):'-');
-    h += metaRow('Relationship', ec.relationship?escapeHTML(ec.relationship):'-');
-    h += metaRow('Phone', ec.phone?escapeHTML(ec.phone):'-');
+    /* v85: emergency contact fields inline-editable for HR. Same
+       pattern; blur commits through updateEmergencyContactField. */
+    h += metaEditEcRow(p.id, 'Name',         'name',         ec.name,         'text', 'Full name');
+    h += metaEditEcRow(p.id, 'Relationship', 'relationship', ec.relationship, 'text', 'Spouse, parent, etc.');
+    h += metaEditEcRow(p.id, 'Phone',        'phone',        ec.phone,        'tel',  '250-555-0100');
     h += '</div>';
   } else {
     h += '<div class="empty" style="font-size:var(--fz-body);padding:14px"><div class="empty-s">Personal contact, address, and emergency contact details are visible to Admin and HR only.</div></div>';
@@ -7870,6 +8180,36 @@ function updatePersonField(personId, field, value){
   p[field] = value;
   if(typeof save==='function') save();
   if(typeof logActivity==='function') logActivity('Updated '+p.first+' '+p.last+' '+field);
+}
+/* v85: emergency contact inline field updater. Terry could not edit
+   emergency contact through the profile drawer; the Personal tab
+   rendered read-only rows and the Edit button did not expose these
+   fields. Blur commits directly to p.emergencyContact.<field>. */
+function updateEmergencyContactField(personId, field, value){
+  var p = ppl.find(function(x){return x.id===personId;}); if(!p) return;
+  if(!p.emergencyContact) p.emergencyContact = {};
+  if(p.emergencyContact[field] === value) return;
+  p.emergencyContact[field] = value;
+  if(typeof save==='function') save();
+  if(typeof logActivity==='function') logActivity('Updated '+p.first+' '+p.last+' emergency contact '+field);
+}
+/* v85: inline-editable metaRow. Renders as a read-friendly label +
+   input row that commits on blur. Matches the metaRow layout so it
+   drops into the same Contact / Emergency card without visual
+   drift. Uses no icon buttons; the input itself is the affordance. */
+function _metaEditInput(id, type, value, placeholder, onblur){
+  var t = type || 'text';
+  return '<input id="'+id+'" type="'+t+'" class="meta-edit-i" value="'+escAttr(value||'')+'" placeholder="'+escAttr(placeholder||'')+'" onblur="'+onblur+'" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}">';
+}
+function metaEditRow(personId, label, field, value, type, placeholder){
+  var inpId = 'me-'+personId+'-'+field;
+  var onblur = 'updatePersonField(\''+personId+'\',\''+field+'\',this.value.trim())';
+  return '<div class="metar"><div class="metar-l">'+escapeHTML(label)+'</div><div class="metar-v">'+_metaEditInput(inpId, type, value, placeholder, onblur)+'</div></div>';
+}
+function metaEditEcRow(personId, label, field, value, type, placeholder){
+  var inpId = 'ec-'+personId+'-'+field;
+  var onblur = 'updateEmergencyContactField(\''+personId+'\',\''+field+'\',this.value.trim())';
+  return '<div class="metar"><div class="metar-l">'+escapeHTML(label)+'</div><div class="metar-v">'+_metaEditInput(inpId, type, value, placeholder, onblur)+'</div></div>';
 }
 function renderTabReporting(p){
   return renderOrgTree(p);
@@ -8060,7 +8400,18 @@ function renderTabAssets(p, canHR){
     h += '<td style="font-family:monospace;font-size:var(--fz-body)">'+escapeHTML(a.identifier||'-')+'</td>';
     h += '<td style="color:var(--txm)">'+(a.assignedDate?fmtD(a.assignedDate):'-')+'</td>';
     h += '<td>'+statusChip+'</td>';
-    if(canHR) h += '<td style="text-align:right"><button class="btn btn-sm btn-ghost" onclick="openEditAsset(\''+p.id+'\',\''+a.id+'\')">Edit</button></td>';
+    if(canHR){
+      /* v85: Terry could not find where to delete an asset; the row
+         had only an Edit ghost button and delete lived one modal deep.
+         Split the row actions so the common cases (return, delete) are
+         one click. Return is only offered while the asset is still
+         assigned; Delete is always available for HR. */
+      h += '<td style="text-align:right;white-space:nowrap">';
+      if(a.status === 'assigned') h += '<button class="btn btn-sm" onclick="quickReturnAsset(\''+p.id+'\',\''+a.id+'\')" title="Mark as returned">Return</button> ';
+      h += '<button class="btn btn-sm" onclick="openEditAsset(\''+p.id+'\',\''+a.id+'\')">Edit</button> ';
+      h += '<button class="btn btn-sm btn-red" onclick="deleteAsset(\''+p.id+'\',\''+a.id+'\')" title="Delete asset record">Delete</button>';
+      h += '</td>';
+    }
     h += '</tr>';
   });
   h += '</tbody></table></div>';
@@ -9796,6 +10147,14 @@ function loadExtraState(){
   (candidates||[]).forEach(function(cd){ if(!cd.source) cd.source = /indeed/i.test(cd.notes||'') ? 'indeed' : 'other'; });
   var rq = localStorage.getItem('smb_reqs_v1');
   if(rq){ try{ requisitions = JSON.parse(rq); }catch(e){ requisitions = seedRequisitions(); } } else { requisitions = seedRequisitions(); }
+  // v83 pre-pass (idempotent): requisitions stored before the
+  // samplesRequired field existed get a one-time default from the
+  // role title (PM and Superintendent roles submit project samples
+  // with the application). The toggle on the role record is
+  // authoritative after this runs once.
+  (requisitions||[]).forEach(function(r0){
+    if(typeof r0.samplesRequired === 'undefined') r0.samplesRequired = /project manager|superintendent/i.test(r0.title||'');
+  });
   var a = localStorage.getItem('smb_activity_v1');
   if(a){ try{ activityLog = JSON.parse(a); }catch(e){ activityLog = []; } } else { activityLog = []; }
   nextCId = Math.max(200, Math.max.apply(null, candidates.map(function(c){return parseInt((c.id||'c0').replace('c',''))||0})))+1;
@@ -9874,7 +10233,7 @@ function saveExtraState(){
 }
 function seedCandidates(){
   return [
-    {id:'c1',first:'Jordan',last:'Riley',role:'Site Superintendent',reqId:'req1',email:'jordan.riley@example.com',phone:'250-555-0142',stage:'career',addedDate:'2026-04-12',applicationSignedDate:'2026-04-14',notes:'Strong candidate. 3 years residential. Available June 1.',targetDept:'Construction',signoffs:{preHire:{by:'Lisa Stephens',date:'2026-04-14'}},interviews:{preHire:{submitted:true,locked:true,by:'Lisa Stephens',answers:{packetSentDate:'2026-04-12',signedDate:'2026-04-14'},scores:{}},screening:{submitted:true,locked:true,by:'Terry Pearson',recommendation:'Yes',scores:{o0:3,o1:4,o2:3,c0:3,c1:3,c2:3,c3:2},answers:{q0:'Wants to run bigger residential sites.',q1:'Field execution and crew leadership.',q2:'Dislikes pure estimating desk work.',q3:'Last managers would rate 8-9.'}}}},
+    {id:'c1',first:'Jordan',last:'Riley',role:'Site Superintendent',reqId:'req1',email:'jordan.riley@example.com',phone:'250-555-0142',stage:'career',addedDate:'2026-04-12',applicationSignedDate:'2026-04-14',notes:'Strong candidate. 3 years residential. Available June 1.',targetDept:'Construction',signoffs:{preHire:{by:'Lisa Stephens',date:'2026-04-14'}},resumeReceivedDate:'2026-04-14',interviews:{preHire:{submitted:true,locked:true,by:'Lisa Stephens',answers:{packetSentDate:'2026-04-12',signedDate:'2026-04-14',samplesReceivedDate:'2026-04-14'},scores:{}},screening:{submitted:true,locked:true,by:'Terry Pearson',recommendation:'Yes',scores:{o0:3,o1:4,o2:3,c0:3,c1:3,c2:3,c3:2},answers:{q0:'Wants to run bigger residential sites.',q1:'Field execution and crew leadership.',q2:'Dislikes pure estimating desk work.',q3:'Last managers would rate 8-9.'}}}},
     {id:'c2',first:'Sam',last:'O\u2019Connor',role:'Estimator',reqId:'req2',email:'sam.oconnor@example.com',phone:'250-555-0186',stage:'screening',addedDate:'2026-04-20',notes:'Red Seal background, moving into estimating.',targetDept:'Construction',interviews:{}},
     {id:'c3',first:'Priya',last:'Sharma',role:'Bookkeeper',email:'priya.sharma@example.com',phone:'250-555-0211',stage:'screening',addedDate:'2026-04-28',notes:'Applied through Indeed. Resume looks solid.',targetDept:'Finance'}
   ];
@@ -11869,7 +12228,47 @@ function reportData(kind){
       rows:term.map(function(p){return [p.first+' '+p.last, p.role||'', p.department||'', p.startDate||'', p.termDate||''];})};
   }
   if(kind==='timeoff'){
-    var rows=[]; roster.forEach(function(p){((p.timeOff&&p.timeOff.history)||[]).forEach(function(r){rows.push([p.first+' '+p.last, r.type||'', r.startDate||'', r.endDate||'', r.status||'', r.hours||'']);});});
+    /* v85: Terry asked for totals by employee. The old report listed
+       every record alphabetized by insertion order and did not total
+       approved hours. Rebuild:
+       - Group by person; within each group sort records by start date
+         descending (newest first).
+       - Insert a subtotal row per employee showing approved hours by
+         type + total approved hours (approved = deducted from the
+         balance; declined and pending do not count).
+       - Sort groups alphabetically by last name so the report opens
+         in the same order the roster reads. */
+    var byPerson = {};
+    roster.forEach(function(p){
+      var recs = (p.timeOff && p.timeOff.history) || [];
+      if(!recs.length) return;
+      byPerson[p.id] = { p:p, recs:recs.slice() };
+    });
+    var order = Object.keys(byPerson).sort(function(a,b){
+      var pa=byPerson[a].p, pb=byPerson[b].p;
+      return (pa.last||'').localeCompare(pb.last||'') || (pa.first||'').localeCompare(pb.first||'');
+    });
+    function fmtHrs(n){ return (Math.round(n*10)/10) + 'h'; }
+    var rows = [];
+    order.forEach(function(pid){
+      var g = byPerson[pid];
+      var name = g.p.first+' '+g.p.last;
+      g.recs.sort(function(a,b){ return (b.startDate||'').localeCompare(a.startDate||''); });
+      var approvedByType = {};
+      var approvedTotal = 0;
+      g.recs.forEach(function(r){
+        rows.push([name, r.type||'', r.startDate||'', r.endDate||'', r.status||'', r.hours||0]);
+        if(r.status === 'approved'){
+          var t = r.type || 'other';
+          approvedByType[t] = (approvedByType[t]||0) + (Number(r.hours)||0);
+          approvedTotal += (Number(r.hours)||0);
+        }
+      });
+      var typeSummary = Object.keys(approvedByType).sort().map(function(t){
+        return t+' '+fmtHrs(approvedByType[t]);
+      }).join(', ');
+      rows.push([name, 'SUBTOTAL (approved)', '', '', typeSummary||'no approved records', approvedTotal]);
+    });
     return {file:'time-off.csv', head:['Name','Type','Start','End','Status','Hours'], rows:rows};
   }
   if(kind==='certs'){
@@ -14110,7 +14509,7 @@ function getCoreValues(){
 var HIRE_KITS = {
   preHire: {
     label:'Pre-Hire Packet', mins:0,
-    blurb:'The first step of the process: send the application packet (the application with its digital-review consent clause, the job description, and the process overview; the template lives on the Blueprint) and record the signed application when it comes back. Nothing else is scheduled until the signed application is on file.',
+    blurb:'The first step of the process: send the application packet from here (Send packet email opens Outlook with the standard text; attach the employment application, the job description, and the process overview) and record what comes back: the signed application, the resume, and project samples where the role requires them. Nothing else is scheduled until the signed application is on file.',
     questions:[]
   },
   digitalScreen: {
@@ -14191,7 +14590,7 @@ function seedRequisitions(){
       /* v55 Delta 6: corrected LIDA Superintendent Candidate Scorecard
          (2026-07-03), seeded as-is per the LIDA-process-as-written
          ruling. LIDA pipeline runs the digital check first. */
-      prep:{needConfirmedDate:'2026-04-01',postedDate:'2026-04-02',planDone:{by:'Lisa Stephens',date:'2026-04-01'}}, id:'req1', title:'Site Superintendent', dept:'Construction', status:'open', owner:'p2',
+      prep:{needConfirmedDate:'2026-04-01',postedDate:'2026-04-02',planDone:{by:'Lisa Stephens',date:'2026-04-01'}}, id:'req1', title:'Site Superintendent', dept:'Construction', status:'open', owner:'p2', samplesRequired:true,
       openedDate:'2026-04-02', salaryRange:'90,000 - 115,000',
       mission:'The purpose of this role is to supervise every project while managing the quality of work, trade partners, and bring the project in on schedule and on budget. Client happiness is paramount along with site safety and cleanliness.',
       outcomes:[
@@ -14215,7 +14614,7 @@ function seedRequisitions(){
     {
       /* v55 Delta 6: corrected LIDA Project Manager Candidate Scorecard
          (2026-07-03), seeded as-is. */
-      prep:{needConfirmedDate:'2026-07-02',postedDate:'2026-07-03',planDone:{by:'Lisa Stephens',date:'2026-07-02'}}, id:'req3', title:'Project Manager', dept:'Construction', status:'open', owner:'p2',
+      prep:{needConfirmedDate:'2026-07-02',postedDate:'2026-07-03',planDone:{by:'Lisa Stephens',date:'2026-07-02'}}, id:'req3', title:'Project Manager', dept:'Construction', status:'open', owner:'p2', samplesRequired:true,
       openedDate:'2026-07-03', salaryRange:'95,000 - 125,000',
       mission:'The purpose of this role is to supervise every project while managing the quality of work, trade partners, and bring the project in on schedule and on budget. Client happiness is paramount along with site safety and cleanliness.',
       outcomes:[
@@ -14238,7 +14637,7 @@ function seedRequisitions(){
       pipeline:['preHire','digitalScreen'].concat(HIRE_PIPELINE_DEFAULT.slice())
     },
     {
-      prep:{needConfirmedDate:'2026-05-02',postedDate:'2026-05-04',planDone:{by:'Lisa Stephens',date:'2026-05-02'}}, id:'req2', title:'Estimator', dept:'Construction', status:'open', owner:'p2',
+      prep:{needConfirmedDate:'2026-05-02',postedDate:'2026-05-04',planDone:{by:'Lisa Stephens',date:'2026-05-02'}}, id:'req2', title:'Estimator', dept:'Construction', status:'open', owner:'p2', samplesRequired:false,
       openedDate:'2026-04-18', salaryRange:'75,000 - 95,000',
       mission:'Produce accurate, competitive estimates that win the right work at margins the company can deliver.',
       outcomes:[
@@ -14353,8 +14752,22 @@ var HIRE_APP_TEMPLATE = {
   name: 'Employment Application',
   fileName: '',
   fileUrl: '',
-  notes: 'Standard employment application sent to inquiring candidates. Update per tenant.'
+  notes: 'Standard employment application sent to inquiring candidates. Update per tenant.',
+  emailSubject: '{ROLE} at {COMPANY}: your application packet',
+  emailBody: 'Hi {FIRST},\n\nThank you for your interest in the {ROLE} position at {COMPANY}. The next step is our application packet. Please complete and return:\n\n1. The attached employment application, signed. Your signature includes consent to a review of your publicly available professional background.\n2. Your current resume, if we do not already have it on file.{SAMPLES}\n\nReply to this email with everything attached. Once your signed application is in, we will be in touch to book a short phone conversation.\n\nThank you,\n{SENDER}\n{COMPANY}',
+  emailSamplesLine: '\n3. Three samples of comparable projects you have worked on (photos or documents are fine).'
 };
+/* v83: fill the packet email placeholders for a candidate. Company
+   name from window.SMB_TENANT.orgName per the tenant-name hard rule;
+   never hardcoded. */
+function _packetEmailFor(c, r){
+  var org = (window.SMB_TENANT && window.SMB_TENANT.orgName) || 'our company';
+  var sender = currentUser ? (currentUser.first+' '+currentUser.last) : 'HR';
+  var role = (r && r.title) || c.role || 'the role';
+  var samples = (r && r.samplesRequired) ? (HIRE_APP_TEMPLATE.emailSamplesLine||'') : '';
+  function fill(t){ return String(t||'').split('{FIRST}').join(c.first||'').split('{ROLE}').join(role).split('{COMPANY}').join(org).split('{SENDER}').join(sender).split('{SAMPLES}').join(samples); }
+  return { subject: fill(HIRE_APP_TEMPLATE.emailSubject), body: fill(HIRE_APP_TEMPLATE.emailBody) };
+}
 function wfStepsFor(scope){ return HIRE_WORKFLOW.steps.filter(function(s){return s.scope===scope;}); }
 
 /* v34: Resolve an ownerRoles token array to a list of people. Reads
@@ -14965,6 +15378,9 @@ function _loadHiringBlueprint(){
       HIRE_APP_TEMPLATE.fileName = data.template.fileName || '';
       HIRE_APP_TEMPLATE.fileUrl = data.template.fileUrl || '';
       HIRE_APP_TEMPLATE.notes = data.template.notes || HIRE_APP_TEMPLATE.notes;
+      HIRE_APP_TEMPLATE.emailSubject = data.template.emailSubject || HIRE_APP_TEMPLATE.emailSubject;
+      HIRE_APP_TEMPLATE.emailBody = data.template.emailBody || HIRE_APP_TEMPLATE.emailBody;
+      HIRE_APP_TEMPLATE.emailSamplesLine = data.template.emailSamplesLine || HIRE_APP_TEMPLATE.emailSamplesLine;
     }
   }catch(e){}
 }
@@ -14979,6 +15395,9 @@ function openAppTemplateEditor(){
   body += '<div style="margin-bottom:14px"><label class="form-l">File name</label><input id="apt-file" class="form-i" placeholder="e.g. LIDA_Homes_Application.pdf" value="'+escAttr(HIRE_APP_TEMPLATE.fileName||'')+'"></div>';
   body += '<div style="margin-bottom:14px"><label class="form-l">Shared link (Google Drive / SharePoint / temporary)</label><input id="apt-url" class="form-i" placeholder="https://..." value="'+escAttr(HIRE_APP_TEMPLATE.fileUrl||'')+'"></div>';
   body += '<div style="margin-bottom:14px"><label class="form-l">Notes for HR</label><textarea id="apt-notes" class="form-i" rows="2">'+escapeHTML(HIRE_APP_TEMPLATE.notes||'')+'</textarea></div>';
+  body += '<div style="margin-bottom:14px"><label class="form-l">Packet email subject</label><input id="apt-esubj" class="form-i" value="'+escAttr(HIRE_APP_TEMPLATE.emailSubject||'')+'"><div class="kpi-card-sub" style="margin-top:4px">Placeholders: {FIRST} {ROLE} {COMPANY}</div></div>';
+  body += '<div style="margin-bottom:14px"><label class="form-l">Packet email body</label><textarea id="apt-ebody" class="form-i" rows="9">'+escapeHTML(HIRE_APP_TEMPLATE.emailBody||'')+'</textarea><div class="kpi-card-sub" style="margin-top:4px">Placeholders: {FIRST} {ROLE} {COMPANY} {SENDER}. {SAMPLES} inserts the project-samples line only for roles that require it.</div></div>';
+  body += '<div style="margin-bottom:14px"><label class="form-l">Project-samples line (inserted at {SAMPLES})</label><textarea id="apt-esamp" class="form-i" rows="2">'+escapeHTML(HIRE_APP_TEMPLATE.emailSamplesLine||'')+'</textarea></div>';
   var html = '<div class="mod-ov" onclick="overlayDismiss(event,&apos;closeAppTemplate&apos;)">'+
     '<div class="modal" style="width:520px" onclick="event.stopPropagation()">'+
     '<div class="modal-h"><div><div class="modal-h-t">Application template</div>'+
@@ -14996,6 +15415,9 @@ function saveAppTemplate(){
   HIRE_APP_TEMPLATE.fileName = (document.getElementById('apt-file')||{}).value || '';
   HIRE_APP_TEMPLATE.fileUrl = (document.getElementById('apt-url')||{}).value || '';
   HIRE_APP_TEMPLATE.notes = (document.getElementById('apt-notes')||{}).value || '';
+  HIRE_APP_TEMPLATE.emailSubject = (document.getElementById('apt-esubj')||{}).value || HIRE_APP_TEMPLATE.emailSubject;
+  HIRE_APP_TEMPLATE.emailBody = (document.getElementById('apt-ebody')||{}).value || HIRE_APP_TEMPLATE.emailBody;
+  HIRE_APP_TEMPLATE.emailSamplesLine = (document.getElementById('apt-esamp')||{}).value || '';
   _persistHiringBlueprint();
   if(typeof toast==='function') toast('Application template saved.');
   if(typeof logActivity==='function') logActivity('Updated application template');
@@ -15409,6 +15831,13 @@ function openRequisition(reqId){
   // v63: Role Prep checklist first; the process starts here.
   h += _reqPrepCard(r);
 
+  // v83: Application packet requirements for this role. Drives the
+  // Pre-Hire Packet stage: the samples receipt row and its submit
+  // gate only apply when this is on.
+  h += '<div class="card has-hd"><div class="card-hd"><span class="hd-ic">'+SVG_IC.doc+'</span><span class="card-title">Application packet</span></div><div class="card-bd">';
+  h += '<div style="display:flex;gap:9px;align-items:baseline"><input type="checkbox" id="req-samples-'+r.id+'" '+(r.samplesRequired?'checked':'')+' onchange="reqToggleSamples(\''+r.id+'\',this.checked)" style="flex-shrink:0"><label for="req-samples-'+r.id+'" style="color:var(--txb)">Project samples required with the application<div class="kpi-card-sub" style="margin-top:2px">Three samples of comparable projects, typical for PM and Superintendent roles. When on, the Pre-Hire Packet stage cannot complete without them.</div></label></div>';
+  h += '</div></div>';
+
   // Role Scorecard
   h += '<div class="card acc k-gold has-hd"><div class="card-hd"><span class="hd-ic">'+SVG_IC.award+'</span><span class="card-title">Role Scorecard</span></div><div class="card-bd">';
   h += '<div class="sc-block"><div class="sc-lbl">Mission</div><div class="sc-val">'+escapeHTML(r.mission||'')+'</div></div>';
@@ -15463,6 +15892,13 @@ function openRequisition(reqId){
   document.getElementById('modal-root').innerHTML = h;
 }
 function closeSpanel(){ document.getElementById('modal-root').innerHTML=''; }
+/* v83: per-role packet requirement toggle (Application packet card). */
+function reqToggleSamples(reqId, on){
+  var r = hireReqById(reqId); if(!r) return;
+  r.samplesRequired = !!on;
+  saveExtraState();
+  if(typeof logActivity==='function') logActivity((on?'Project samples now required':'Project samples no longer required')+' with the application for '+r.title);
+}
 
 /* ── v49: FINALIST COMPARISON ──────────────────────────────────────
    The payoff screen for structured hiring: 2-3 finalists side by side
@@ -16135,11 +16571,41 @@ function conductInterview(cid, stageType){
     // facts. The signed application carries the digital-review
     // consent, so recording it here is what unlocks the digital
     // check (same c.applicationSignedDate field the check reads).
+    // v83: guided send/receive flow. The module does the work, not
+    // just the bookkeeping: Send packet email opens Outlook with the
+    // standard text prefilled and records the sent date; the receive
+    // side is three dated receipt facts. The signed application
+    // still carries the digital-review consent (same
+    // c.applicationSignedDate field the digital check reads).
     var phSent = (iv.answers && iv.answers.packetSentDate) || '';
     var phSigned = c.applicationSignedDate || (iv.answers && iv.answers.signedDate) || '';
-    h+='<div class="form-note">Send the application packet (application with consent clause, job description, process overview; template on the Blueprint) and record the signed application when it returns. The digital check will not run until the signed application is on file.</div>';
-    h+='<div style="margin:12px 0;display:flex;align-items:center;gap:8px"><input type="checkbox" id="iv-ph-sent" '+(phSent?'checked':'')+' onchange="phToggleSent(\''+c.id+'\',this.checked)"><label for="iv-ph-sent" style="color:var(--txt)">Application packet sent'+(phSent?' <span class="kpi-card-sub">'+fmtDateShort(phSent)+'</span>':'')+'</label></div>';
-    h+='<div style="margin:12px 0;display:flex;align-items:center;gap:8px"><input type="checkbox" id="iv-ph-signed" '+(phSigned?'checked':'')+' onchange="phToggleSigned(\''+c.id+'\',this.checked)"><label for="iv-ph-signed" style="color:var(--txt)">Signed application received (carries the digital-review consent)'+(phSigned?' <span class="kpi-card-sub">'+fmtDateShort(phSigned)+'</span>':'')+'</label></div>';
+    var phResume = c.resumeReceivedDate || '';
+    var phSamples = (iv.answers && iv.answers.samplesReceivedDate) || '';
+    var phSampReq = !!(r && r.samplesRequired);
+    h+='<div style="font-weight:700;color:var(--txm);font-size:var(--fz-body);text-transform:uppercase;letter-spacing:.05em;margin:4px 0 8px">1. Send the packet</div>';
+    h+='<div class="form-note">The packet is three attachments. Send packet email opens Outlook with the standard text (edit it under Application template on the Roles page) and records the sent date.</div>';
+    h+='<div style="margin:10px 0;padding:10px 14px;background:var(--sur2);border-radius:6px">';
+    h+='<div style="display:flex;gap:9px;align-items:baseline;padding:4px 0"><span style="color:var(--txd);flex-shrink:0">1.</span><span style="color:var(--txb)">Employment application (the signature carries the digital-review consent)'+(HIRE_APP_TEMPLATE.fileName?' <span class="kpi-card-sub">'+escapeHTML(HIRE_APP_TEMPLATE.fileName)+'</span>':' <span class="chip c-amb" style="font-size:var(--fz-xs)">no file on the template yet</span>')+'</span></div>';
+    h+='<div style="display:flex;gap:9px;align-items:baseline;padding:4px 0"><span style="color:var(--txd);flex-shrink:0">2.</span><span style="color:var(--txb)">Job description'+(r&&r.jobDescription?'':' <span class="chip c-amb" style="font-size:var(--fz-xs)">not generated yet: open the role record</span>')+'</span></div>';
+    h+='<div style="display:flex;gap:9px;align-items:baseline;padding:4px 0"><span style="color:var(--txd);flex-shrink:0">3.</span><span style="color:var(--txb)">Hiring process overview</span></div>';
+    h+='</div>';
+    h+='<div style="margin:12px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
+    h+='<button class="btn btn-gold" '+(c.email?'':'disabled title="Add the candidate\'s email address first"')+' onclick="phSendPacket(\''+c.id+'\')">Send packet email</button>';
+    h+='<label class="form-l" style="margin:0" for="iv-ph-sent-date">Packet sent</label><input type="date" class="form-i" id="iv-ph-sent-date" style="width:170px" value="'+escAttr(phSent)+'" onchange="phSetSent(\''+c.id+'\',this.value)" title="Set by Send packet email; edit for packets sent outside the product">';
+    h+='</div>';
+    if(phSent && !phSigned){
+      var phDays = daysBetween(phSent, todayISO());
+      h+='<div style="margin:10px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="chip c-amb">awaiting packet</span><span style="color:var(--txm);font-size:var(--fz-base)">sent '+(phDays===0?'today':phDays+(phDays===1?' day':' days')+' ago')+'; the signed application is not back yet</span><button class="btn btn-sm" '+(c.email?'':'disabled')+' onclick="phNudge(\''+c.id+'\')">Send a nudge</button></div>';
+    }
+    h+='<div style="font-weight:700;color:var(--txm);font-size:var(--fz-body);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px">2. Receive the packet</div>';
+    h+='<div class="form-note">Record each item the day it arrives. Nothing else is scheduled until the signed application is on file; the digital check reads its consent from it.</div>';
+    h+='<div style="margin:12px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><label class="form-l" style="margin:0;min-width:220px" for="iv-ph-signed-date">Signed application received</label><input type="date" class="form-i" id="iv-ph-signed-date" style="width:170px" value="'+escAttr(phSigned)+'" onchange="phSetSigned(\''+c.id+'\',this.value)"><span class="kpi-card-sub">carries the digital-review consent</span></div>';
+    h+='<div style="margin:12px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><label class="form-l" style="margin:0;min-width:220px" for="iv-ph-resume-date">Resume on file</label><input type="date" class="form-i" id="iv-ph-resume-date" style="width:170px" value="'+escAttr(phResume)+'" onchange="phSetResume(\''+c.id+'\',this.value)"><span class="kpi-card-sub">counts if it arrived before the packet went out</span></div>';
+    if(phSampReq){
+      h+='<div style="margin:12px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><label class="form-l" style="margin:0;min-width:220px" for="iv-ph-samples-date">Project samples received</label><input type="date" class="form-i" id="iv-ph-samples-date" style="width:170px" value="'+escAttr(phSamples)+'" onchange="phSetSamples(\''+c.id+'\',this.value)"><span class="kpi-card-sub">three samples of comparable projects; required for this role</span></div>';
+    } else {
+      h+='<div style="margin:12px 0;color:var(--txd);font-size:var(--fz-base)">Project samples: not required for this role. Turn this on per role under Application packet on the role record.</div>';
+    }
   } else if(stageType==='digitalScreen'){
     // v55 Delta 12: AI digital background check. Consent first; AI
     // summarizes; a person decides. Compliance is baked in (BC PIPA
@@ -16252,6 +16718,11 @@ function saveInterview(cid, stageType, submit){
   if(stageType==='preHire'){
     if(submit && !(iv.answers && iv.answers.packetSentDate)){ toast('Packet not sent','Record the packet as sent before completing the stage.','error'); return; }
     if(submit && !c.applicationSignedDate){ toast('No signed application','Record the signed application before completing the stage. It carries the digital-review consent.','error'); return; }
+    if(submit && !c.resumeReceivedDate){ toast('No resume on file','Record the resume before completing the stage. You cannot screen without one.','error'); return; }
+    if(submit){
+      var _phr = hireReqById(c.reqId);
+      if(_phr && _phr.samplesRequired && !(iv.answers && iv.answers.samplesReceivedDate)){ toast('Project samples missing','This role requires project samples with the application. Record them before completing the stage.','error'); return; }
+    }
   } else if(stageType==='digitalScreen'){
     var dsS=document.getElementById('iv-ds-summary'); var dsD=document.getElementById('iv-ds-decision');
     if(dsS) iv.answers.summary=dsS.value; if(dsD) iv.answers.decision=dsD.value;
@@ -16646,22 +17117,70 @@ function jdDraftAI(reqId){
     toast('Draft (fallback)','Proxy unavailable; Scorecard draft applied.','info');
   });
 }
-function phToggleSent(cid, on){
-  var c = candidates.find(function(x){return x.id===cid;}); if(!c) return;
+/* v83: guided packet flow. The send action IS the record (the act
+   logs the date); receive facts are dated, editable, and honest. */
+function _phIv(c){
   c.interviews = c.interviews || {};
   var iv = c.interviews.preHire = c.interviews.preHire || {answers:{},scores:{}};
   iv.answers = iv.answers || {};
-  iv.answers.packetSentDate = on ? todayISO() : '';
-  saveExtraState();
+  return iv;
 }
-function phToggleSigned(cid, on){
+function phSendPacket(cid){
   var c = candidates.find(function(x){return x.id===cid;}); if(!c) return;
-  c.interviews = c.interviews || {};
-  var iv = c.interviews.preHire = c.interviews.preHire || {answers:{},scores:{}};
-  iv.answers = iv.answers || {};
-  c.applicationSignedDate = on ? todayISO() : '';
+  if(!c.email){ toast('No email on file','Add the candidate\u2019s email address first.','error'); return; }
+  var r = hireReqById(c.reqId);
+  var em = _packetEmailFor(c, r);
+  try{ window.open('mailto:'+encodeURIComponent(c.email)+'?subject='+encodeURIComponent(em.subject)+'&body='+encodeURIComponent(em.body), '_self'); }catch(e){}
+  var iv = _phIv(c);
+  if(!iv.answers.packetSentDate) iv.answers.packetSentDate = todayISO();
+  if(typeof _hcLog==='function') _hcLog(c, 'email', 'Application packet email drafted to '+c.email+' (opened in your mail client with the standard text; auto-send and thread capture arrive with the Email + Calendar Integration Backend).');
+  saveExtraState();
+  toast('Packet email opened', 'Before sending, attach the employment application'+(HIRE_APP_TEMPLATE.fileName?' ('+HIRE_APP_TEMPLATE.fileName+')':'')+', the job description, and the process overview. Sent date recorded.', 'info');
+  conductInterview(cid, 'preHire');
+}
+function phNudge(cid){
+  var c = candidates.find(function(x){return x.id===cid;}); if(!c || !c.email) return;
+  var iv = _phIv(c);
+  var org = (window.SMB_TENANT && window.SMB_TENANT.orgName) || 'our company';
+  var sender = currentUser ? (currentUser.first+' '+currentUser.last) : 'HR';
+  var subj = 'Following up: your application packet';
+  var body = 'Hi '+(c.first||'')+',\n\nJust following up on the application packet we sent over'+(iv.answers.packetSentDate?' on '+fmtDateShort(iv.answers.packetSentDate):'')+'. Reply with the signed application and we will get your phone conversation booked.\n\nThank you,\n'+sender+'\n'+org;
+  try{ window.open('mailto:'+encodeURIComponent(c.email)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body), '_self'); }catch(e){}
+  if(typeof _hcLog==='function') _hcLog(c, 'email', 'Packet follow-up nudge drafted to '+c.email+'.');
+  saveExtraState();
+  toast('Nudge opened', 'Follow-up email drafted in your mail client.', 'info');
+}
+function phSetSent(cid, val){
+  var c = candidates.find(function(x){return x.id===cid;}); if(!c) return;
+  var iv = _phIv(c);
+  iv.answers.packetSentDate = val || '';
+  saveExtraState();
+  conductInterview(cid, 'preHire');
+}
+function phSetSigned(cid, val){
+  var c = candidates.find(function(x){return x.id===cid;}); if(!c) return;
+  var ds = c.interviews && c.interviews.digitalScreen;
+  if(!val && c.applicationSignedDate && ds && ds.answers && (ds.answers.summary || ds.answers.decision)){
+    if(!confirm('The digital check already ran on this candidate\u2019s consent. Clearing the signed application invalidates that consent.\n\nClear it anyway?')){ conductInterview(cid, 'preHire'); return; }
+  }
+  var iv = _phIv(c);
+  c.applicationSignedDate = val || '';
   iv.answers.signedDate = c.applicationSignedDate;
   saveExtraState();
+  conductInterview(cid, 'preHire');
+}
+function phSetResume(cid, val){
+  var c = candidates.find(function(x){return x.id===cid;}); if(!c) return;
+  c.resumeReceivedDate = val || '';
+  saveExtraState();
+  conductInterview(cid, 'preHire');
+}
+function phSetSamples(cid, val){
+  var c = candidates.find(function(x){return x.id===cid;}); if(!c) return;
+  var iv = _phIv(c);
+  iv.answers.samplesReceivedDate = val || '';
+  saveExtraState();
+  conductInterview(cid, 'preHire');
 }
 function dsToggleConsent(cid, on){
   var c = candidates.find(function(x){return x.id===cid;}); if(!c) return;
@@ -17005,8 +17524,10 @@ function _candTrack(c){
 var STAGE_CHECKLIST_DEFAULTS = {
   identifyRole: REQ_PREP_ITEMS.map(function(it, n){ return {id:'identifyRole-'+(n+1), t:it.t, key:it.key, short:it.short, kind:it.kind}; }),
   preHire:[
-    {id:'preHire-1', t:'In response to job inquiries, send a request for the full application packet: completed application, resume, and three samples of comparable projects (field positions). Attach the job description and the LIDA Homes Employment Application; use the standard email text. (HR)', auto:'packetSent'},
-    {id:'preHire-2', t:'Receive the completed application packet: completed application, resume, and project samples where applicable. Written pre-screening happens in the phone interview, not in the packet. The signed application carries the digital-review consent. (HR)', auto:'signedApp'}
+    {id:'preHire-1', t:'In response to job inquiries, send the application packet: use Send packet email (Outlook opens with the standard text) and attach the employment application, the job description, and the process overview. (HR)', auto:'packetSent'},
+    {id:'preHire-2', t:'Receive the signed employment application. The signature carries the digital-review consent; nothing else is scheduled until it is on file. Written pre-screening happens in the phone interview, not in the packet. (HR)', auto:'signedApp'},
+    {id:'preHire-3', t:'Resume on file. Counts if it arrived before the packet went out. (HR)', auto:'resumeReceived'},
+    {id:'preHire-4', t:'Receive three samples of comparable projects. Required for this role. (HR)', auto:'samplesReceived'}
   ],
   digitalScreen:[
     {id:'digitalScreen-1', t:'No review without a signed application: the LIDA Homes Employment Application includes the candidate\u2019s written consent to this review.', auto:'consent'},
@@ -17088,9 +17609,18 @@ function _clSaveOverlay(o){
    template-editing surface. */
 function _stageChecklist(stage, reqId){
   var o = _clOverlay();
-  if(reqId && Array.isArray(o[reqId+'::'+stage])) return o[reqId+'::'+stage];
-  if(Array.isArray(o[stage])) return o[stage];
-  return STAGE_CHECKLIST_DEFAULTS[stage] || [];
+  var list;
+  if(reqId && Array.isArray(o[reqId+'::'+stage])) list = o[reqId+'::'+stage];
+  else if(Array.isArray(o[stage])) list = o[stage];
+  else list = STAGE_CHECKLIST_DEFAULTS[stage] || [];
+  // v83: the project-samples receipt item only appears when the
+  // requisition requires samples with the application (the toggle on
+  // the role record; typical for PM and Superintendent roles).
+  if(stage==='preHire'){
+    var r0 = reqId && typeof hireReqById==='function' ? hireReqById(reqId) : null;
+    if(!(r0 && r0.samplesRequired)) list = list.filter(function(it){ return it.auto!=='samplesReceived'; });
+  }
+  return list;
 }
 function _isRoleEdited(stage, reqId){
   var o = _clOverlay();
@@ -17102,6 +17632,8 @@ function _autoItemState(c, stage, key){
   switch(key){
     case 'packetSent': return !!(iv && iv.answers && iv.answers.packetSentDate);
     case 'signedApp': case 'consent': return !!c.applicationSignedDate;
+    case 'resumeReceived': return !!c.resumeReceivedDate;
+    case 'samplesReceived': return !!(iv && iv.answers && iv.answers.samplesReceivedDate);
     case 'dsRun': return !!(iv && iv.answers && iv.answers.summary);
     case 'dsDecision': return !!(iv && iv.answers && iv.answers.decision);
     case 'purposeFit': return !!(iv && iv.purposeFit);
@@ -17260,6 +17792,7 @@ function openAddCandidate(reqId){
   html += '</div>';
   html += '<div style="margin-bottom:14px"><label class="form-l">Initial stage</label><select class="form-i" id="cn-stage"><option value="preHire">Pre-Hire Packet (process start)</option><option value="screening">Screening</option></select><div class="kpi-card-sub" style="margin-top:4px">New candidates enter at the start of the process. Assign a requisition after saving; if its pipeline has no packet or digital-check stage the record migrates to Screening automatically.</div></div>';
   html += '<div style="margin-bottom:14px"><label class="form-l">Source</label><select class="form-i" id="cn-source">'+'<option value="referral">Referral</option><option value="indeed">Indeed</option><option value="website">Website</option><option value="direct">Direct outreach</option><option value="other">Other</option>'+'</select></div>';
+  html += '<div style="margin-bottom:14px;display:flex;gap:9px;align-items:baseline"><input type="checkbox" id="cn-resume" style="flex-shrink:0"><label class="form-l" for="cn-resume" style="margin:0">Resume already on file<span class="kpi-card-sub" style="display:block;margin-top:2px">Most inquiries arrive with one. Checks off the Pre-Hire Packet resume item, dated today.</span></label></div>';
   html += '<div><label class="form-l">Notes</label><textarea class="form-i" id="cn-notes" rows="3" placeholder="Source, key strengths, concerns, next steps"></textarea></div>';
   html += '</div>';
   html += '<div class="modal-f"><button class="btn" onclick="closeAddCandidate()">Cancel</button><button class="btn btn-gold" onclick="saveNewCandidate()">Add to pipeline</button></div>';
@@ -17283,6 +17816,7 @@ function saveNewCandidate(){
     notes:document.getElementById('cn-notes').value.trim(),
     targetDept:document.getElementById('cn-dept').value
   };
+  if((document.getElementById('cn-resume')||{}).checked) c.resumeReceivedDate = todayISO();
   if(window._addCandReq && hireReqById(window._addCandReq)){
     var _ar = hireReqById(window._addCandReq);
     c.reqId = _ar.id;
@@ -18912,6 +19446,22 @@ function deleteAsset(personId, assetId){
   closeAssetModal();
   toast('Asset deleted', a.name+' removed.', 'info');
 }
+/* v85: mark an assigned asset returned in one click from the row.
+   Delete lives next to it for the case where the record itself should
+   be removed (e.g. an incorrect assignment); Return is the everyday
+   action (offboarding, handoff, upgrade). */
+function quickReturnAsset(personId, assetId){
+  var p = ppl.find(function(x){return x.id===personId});
+  if(!p) return;
+  var a = (p.assets||[]).find(function(x){return x.id===assetId});
+  if(!a) return;
+  a.status = 'returned';
+  a.returnedDate = todayISO();
+  save();
+  if(typeof logActivity === 'function') logActivity('Asset returned: '+p.first+' '+p.last+' - '+a.name);
+  if(openPersonId === personId && typeof renderProfileDrawer==='function') renderProfileDrawer();
+  toast('Asset returned', a.name+' marked returned '+fmtDateShort(a.returnedDate)+'.', 'success');
+}
 
 /* ─── v4: TIME OFF ACCRUAL ENGINE ─── */
 var ACCRUAL_POLICIES = {
@@ -19364,6 +19914,314 @@ window.SMB_HR_onDocumentSigned = function(payload){
     return true;
   }catch(e){ return false; }
 };
+</script>
+
+<script>
+/* SMB HR STAGING ADAPTER v2.1 (staging-only; not in gated source; not audited).
+   Ported from the working SMB VSP Staging Adapter v2.1 so HR gets the same
+   safe model VSP arrived at after its early polling model kept erasing data:
+
+     1. ON LOAD: pull the team's latest data from the cloud ONCE and show it.
+     2. AS YOU WORK: each save is sent up to the cloud (debounced).
+     3. TO SEE TEAMMATES' CHANGES: tap the badge to refresh on demand.
+
+   There is NO background auto-refresh. The old VSP polling model re-rendered
+   the page every few seconds, which erased data while it was being typed.
+   Removing it fixes that completely. Not adding it here in the first place.
+
+   DEPLOY SAFETY: the file can NEVER overwrite non-empty server data. The
+   server is treated as empty ONLY when it literally is. If the server holds
+   a different HR_STORAGE_VERSION than this build, the adapter refuses to
+   load or push and shows a warning, so team data stays safe until a
+   matching build opens it. Nothing is pushed until the load-time pull has
+   reconciled.
+
+   HR difference from VSP: HR persists across ~17 localStorage keys instead
+   of one. The reconcile model is unchanged; the payload is a map of key -> raw
+   string. The version guard reads smb_hr_storage_version (HR's own key) on
+   both sides.
+
+   To return this file to pure local behavior, delete this entire script
+   block. Nothing above it was changed. */
+(function(){
+  var FB_URL  = 'https://smb-staging-666a3-default-rtdb.firebaseio.com';
+  var FB_PATH = 'hr/lida-001/data';
+  var ENDPOINT = FB_URL.replace(/\/+$/,'') + '/' + FB_PATH + '.json';
+  var REST = 'Synced - tap to refresh';
+
+  // Every HR persistence key. Other keys (view state, column widths, tour
+  // seen, dashboard layout) stay browser-local.
+  var HR_KEYS = [
+    'smb_candidates_v1',
+    'smb_reqs_v1',
+    'smb_roles_v1',
+    'smb_people_v1',
+    'smb_teams_v1',
+    'smb_activity_v1',
+    'smb_hire_checklists_v1',
+    'smb_hire_kits_v1',
+    'smb_hire_settings_v1',
+    'smb_hire_stage_owner_ov_v1',
+    'smb_hiring_blueprint_v1',
+    'smb_hr_benefits_v1',
+    'smb_hr_companydocs_v1',
+    'smb_hr_storage_version',
+    'smb_seed_demo_v1',
+    'smb_seed_v3_extras',
+    'smb_seed_v4_extras'
+  ];
+  var HR_KEYSET = {}; HR_KEYS.forEach(function(k){ HR_KEYSET[k]=true; });
+  var VERSION_KEY = 'smb_hr_storage_version';
+
+  // Snapshot = { key: rawString or null } across every HR_KEY.
+  function snapshotLocal(){
+    var out = {};
+    HR_KEYS.forEach(function(k){
+      try { out[k] = _origGetItem.call(localStorage, k); } catch(e){ out[k] = null; }
+    });
+    return out;
+  }
+  function snapshotSig(snap){
+    // Stable stringify: keys in fixed order (HR_KEYS is the order).
+    if(!snap) return null;
+    var parts = [];
+    for(var i=0;i<HR_KEYS.length;i++){
+      var k = HR_KEYS[i];
+      parts.push(k+'\u0000'+(snap[k]==null ? '\u0001' : snap[k]));
+    }
+    return parts.join('\u0002');
+  }
+
+  var lastSyncedSig = null;    // signature of the last snapshot confirmed to match cloud
+  var pendingLocal = null;     // snapshot with a local change not yet pushed
+  var pushTimer = null;
+  var pulling = false;
+  var lastInputTs = 0;
+  var ready = false;           // no push before load-time pull reconciles
+
+  // Preserve the original localStorage methods so our own reads/writes do
+  // not re-enter the interceptor and the adopt path does not echo back to
+  // the cloud.
+  var _origSetItem = localStorage.setItem.bind(localStorage);
+  var _origGetItem = localStorage.getItem.bind(localStorage);
+
+  function setBadge(kind, text){
+    var el = document.getElementById('smb-stage-badge');
+    if(!el) return;
+    var dot = el.querySelector('.smb-stage-dot');
+    var lbl = el.querySelector('.smb-stage-lbl');
+    var col = kind === 'ok'   ? 'rgba(46,160,67,1)'
+            : kind === 'sync' ? 'rgba(240,180,40,1)'
+            :                   'rgba(200,60,60,1)';
+    if(dot) dot.style.background = col;
+    if(lbl && text) lbl.textContent = text;
+  }
+  function rest(){ setBadge('ok', REST); }
+  function flash(kind, text, back){
+    setBadge(kind, text);
+    setTimeout(function(){ rest(); }, back || 1500);
+  }
+
+  // Adopt a cloud snapshot into localStorage and re-render.
+  function applySnapshot(snap){
+    HR_KEYS.forEach(function(k){
+      try {
+        if(snap[k] == null) return;   // never delete a key from an adopt
+        _origSetItem(k, snap[k]);
+      } catch(e){}
+    });
+    try { if(typeof window.loadExtraState === 'function') window.loadExtraState(); } catch(e){}
+    try { if(typeof window.renderPage === 'function') window.renderPage(); } catch(e){}
+  }
+
+  function pushUp(snap){
+    if(typeof fetch !== 'function') return;
+    setBadge('sync', 'Saving...');
+    fetch(ENDPOINT, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(snap)
+    }).then(function(){
+      lastSyncedSig = snapshotSig(snap);
+      if(pendingLocal && snapshotSig(pendingLocal) === lastSyncedSig) pendingLocal = null;
+      flash('ok', 'Saved', 1200);
+    }).catch(function(){
+      setBadge('off', 'Offline - will retry on next save');
+    });
+  }
+
+  // True while the user is mid-entry, so a manual refresh will not wipe it.
+  function isEditing(){
+    try{
+      var ae = document.activeElement;
+      if(ae){
+        var tag = (ae.tagName || '').toUpperCase();
+        if(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+        if(ae.isContentEditable) return true;
+      }
+    }catch(e){}
+    if(Date.now() - lastInputTs < 4000) return true;
+    // If a modal is open, assume editing.
+    try { if(document.querySelector('.modal, .smb-modal')) return true; } catch(e){}
+    return false;
+  }
+
+  // Read the server. Returns { empty, snap, unreadable }.
+  function parseServer(txt){
+    if(txt == null || txt === '' || txt === 'null') return { empty: true };
+    var parsed = null;
+    try { parsed = JSON.parse(txt); } catch(e){ return { unreadable: true }; }
+    if(!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { unreadable: true };
+    // Accept only a map of HR keys.
+    var snap = {};
+    var sawAny = false;
+    for(var k in parsed){
+      if(HR_KEYSET[k]){
+        if(typeof parsed[k] === 'string' || parsed[k] === null){ snap[k] = parsed[k]; sawAny = true; }
+      }
+    }
+    if(!sawAny) return { unreadable: true };
+    // Fill missing keys with null so the signature is comparable.
+    HR_KEYS.forEach(function(k){ if(!(k in snap)) snap[k] = null; });
+    return { snap: snap };
+  }
+
+  // Version guard. HR persists smb_hr_storage_version as a raw string
+  // like "v82". If it does not match, refuse to load or push.
+  function serverVersion(snap){
+    if(!snap) return null;
+    var v = snap[VERSION_KEY];
+    if(v == null) return null;
+    // Stored either as bare string or JSON-encoded string; try both.
+    try { return JSON.parse(v); } catch(e){ return v; }
+  }
+  function myVersion(){
+    try { return (typeof HR_STORAGE_VERSION !== 'undefined') ? HR_STORAGE_VERSION : null; } catch(e){ return null; }
+  }
+
+  function pull(){
+    if(typeof fetch !== 'function') return;
+    if(pulling) return;
+    pulling = true;
+    fetch(ENDPOINT, { cache: 'no-store' }).then(function(r){ return r.text(); }).then(function(txt){
+      pulling = false;
+      var srv = parseServer(txt);
+
+      if(srv.unreadable){
+        // Server has data in an unexpected shape. Do NOT overwrite it.
+        ready = false;
+        setBadge('off', 'Server data not recognized - not overwriting. Tap to retry');
+        return;
+      }
+
+      if(srv.empty){
+        // Genuinely empty. Seed from this browser so the team has a baseline.
+        var localSnap = snapshotLocal();
+        var anyLocal = HR_KEYS.some(function(k){ return localSnap[k] != null; });
+        if(anyLocal){ pushUp(localSnap); } else { rest(); }
+        ready = true;
+        return;
+      }
+
+      // Version guard.
+      var rv = serverVersion(srv.snap);
+      var mv = myVersion();
+      if(rv != null && mv != null && String(rv) !== String(mv)){
+        ready = false;
+        setBadge('off', 'Server data ' + rv + ' differs from app ' + mv + ' - not loading/overwriting');
+        return;
+      }
+
+      // A local change is queued - it wins. Push it, do not adopt.
+      if(pendingLocal !== null){
+        if(!pushTimer){ pushUp(pendingLocal); }
+        ready = true; rest();
+        return;
+      }
+
+      var remoteSig = snapshotSig(srv.snap);
+      var localSig  = snapshotSig(snapshotLocal());
+      if(remoteSig === lastSyncedSig){ lastSyncedSig = remoteSig; ready = true; flash('ok', 'Up to date', 1200); return; }
+      if(remoteSig === localSig){ lastSyncedSig = remoteSig; ready = true; flash('ok', 'Up to date', 1200); return; }
+
+      // Cloud has data this browser does not. Adopt it.
+      lastSyncedSig = remoteSig;
+      applySnapshot(srv.snap);
+      ready = true;
+      flash('ok', 'Loaded team data', 1500);
+    }).catch(function(){
+      pulling = false;
+      setBadge('off', 'Offline - tap to retry');
+    });
+  }
+
+  // Intercept saves: any HR key change queues a debounced push of the full
+  // snapshot. Non-HR keys pass through untouched.
+  localStorage.setItem = function(k, v){
+    _origSetItem(k, v);
+    if(!HR_KEYSET[k]) return;
+    // Do not push anything until the load-time pull has reconciled. A
+    // fresh page seeds its data first; pushing that before adopting the
+    // cloud copy is exactly what erased VSP team data on early deploys.
+    if(!ready) return;
+    var snap = snapshotLocal();
+    var sig = snapshotSig(snap);
+    if(sig === lastSyncedSig) return;
+    pendingLocal = snap;
+    if(pushTimer) clearTimeout(pushTimer);
+    pushTimer = setTimeout(function(){ pushTimer = null; pushUp(pendingLocal); }, 600);
+  };
+
+  function manualRefresh(){
+    if(!ready){ pull(); return; }   // if the initial pull failed (unreadable/version), let a tap retry
+    if(isEditing()){ flash('sync', 'Finish your entry, then tap', 2000); return; }
+    setBadge('sync', 'Checking for updates...');
+    pull();
+  }
+
+  function mountBadge(){
+    if(document.getElementById('smb-stage-badge')) return;
+    var b = document.createElement('div');
+    b.id = 'smb-stage-badge';
+    b.setAttribute('title', 'Staging: your saves go to the shared cloud. Tap to load your team\'s latest.');
+    b.style.cssText = 'position:fixed;z-index:99999;'
+      + 'display:flex;align-items:center;gap:7px;'
+      + 'background:rgba(20,28,46,.92);color:#fff;'
+      + 'font:600 12px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;'
+      + 'padding:8px 11px;border-radius:999px;'
+      + 'box-shadow:0 2px 10px rgba(0,0,0,.25);cursor:pointer;user-select:none;';
+    b.innerHTML = '<span class="smb-stage-dot" style="width:9px;height:9px;'
+      + 'border-radius:50%;background:rgba(240,180,40,1);'
+      + 'box-shadow:0 0 0 3px rgba(255,255,255,.12)"></span>'
+      + '<span class="smb-stage-lbl">Connecting...</span>';
+    if(!document.getElementById('smb-stage-badge-css')){
+      var st = document.createElement('style');
+      st.id = 'smb-stage-badge-css';
+      // Bottom-left past the 240px sidebar, matching VSP's placement.
+      st.textContent = '#smb-stage-badge{left:256px !important;right:auto !important;bottom:14px !important;}'
+        + '@media (max-width:768px){#smb-stage-badge{left:14px !important;}}';
+      (document.head||document.documentElement).appendChild(st);
+    }
+    b.addEventListener('click', manualRefresh);
+    document.body.appendChild(b);
+  }
+
+  function start(){
+    mountBadge();
+    try{
+      document.addEventListener('keydown', function(){ lastInputTs = Date.now(); }, true);
+      document.addEventListener('input',   function(){ lastInputTs = Date.now(); }, true);
+    }catch(e){}
+    if(typeof fetch !== 'function'){ setBadge('off', 'Sync unsupported here'); return; }
+    pull();   // one-time reconcile with the cloud on load. No background polling.
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+})();
 </script>
 </body>
 </html>
