@@ -230,6 +230,104 @@
               gap callouts populate, cycleSkill edits persist, Coach
               signal carries 5 skill-risk items, 10/10 pages render with
               0 runtime errors.
+  HR Module v87 - 2026-07-22 - FILE UPLOAD EVERYWHERE IT BELONGS.
+            The v86 seam covered one surface (the profile Documents
+            tab); Dave: make this world class so an HR Manager feels
+            the software is amazing. This pass wires the same
+            SMB_FILES contract into every remaining document-shaped
+            surface in the module. All surfaces degrade gracefully to
+            link-entry when no provider is mounted.
+            1. CERTIFICATIONS: Add and Edit certification modals gain
+              the file row (ticket photo or PDF, scope hr-certs);
+              cert records carry fileUrl / fileName / size; the
+              Certifications page type cell and the edit modal show a
+              View ticket link. This is the WCB-audit surface: the
+              ticket evidence now lives with the expiry record.
+            2. MY HR SELF-SERVE RENEWAL: the Upload renewal stub
+              (v34 toast) is now a real renewal modal: new expiry
+              date + ticket file, either or both. A field employee
+              photographs the renewed card on their phone, uploads,
+              sets the date; HR sees the activity log entry and the
+              expiry RAG updates. Works date-only without a provider.
+              Modal carries the keydown/click stopPropagation triple
+              and type=button per the Modal Keydown rule; in-surface
+              flow per No-Native-Dialogs Rule v1.
+            3. COMPANY DOCUMENTS: each row in the editor gains an
+              Upload button (scope company-docs) that uploads the PDF
+              and fills the row URL; handbook / safety policy / code
+              of conduct can now be the real files employees open
+              from My HR.
+            4. BENEFITS PLAN: the booklet field gains an Upload
+              button (scope benefits); My HR renders the uploaded
+              booklet through the same bookletUrl it already reads.
+            5. APPLICATION TEMPLATE: the Blueprint editor uploads the
+              real employment application PDF (scope
+              hiring-templates); uploading fills the URL and the file
+              name, so the packet email references a file that
+              actually exists.
+            6. CANDIDATE RECEIPTS: Pre-Hire Packet resume and project
+              samples rows gain Attach / Replace buttons (scope
+              hiring-candidates) with view chips; uploading auto-sets
+              the matching receipt date when empty (the act is the
+              record). Screeners read the resume from the pipeline
+              instead of digging through email.
+            - Shared plumbing: _docUploadIfChosen gains a scope
+              parameter; new smbFilesPickAndFill pick-and-fill helper
+              writes uploaded URLs into existing link inputs so every
+              surface works identically for pasted links and uploads.
+            - HR_STORAGE_VERSION NOT bumped: additive fields only
+              (cert fileUrl/fileName/size; candidate resumeFileUrl /
+              resumeFileName / samplesFileUrl / samplesFileName).
+            Validation: audit v3.13 Sections A-Q exit 0; render_check
+              PASS; node --check clean; 0 em-dashes outside title;
+              style-block integrity PASS; jsdom probe green.
+  HR Module v86 - 2026-07-22 - FILE STORAGE CONTRACT v1 SEAM (real
+            document upload for team testing). Expert-HR gap analysis
+            found the single world-class blocker in the Documents
+            surface: the tab stored metadata plus an external link,
+            never the file itself. This version ships the module-side
+            seam; the deployed index.html carries a staging provider
+            against Firebase Storage so the team can upload real PDFs
+            on GitHub Pages today, and Anand's Backblaze B2 backend
+            replaces the provider in production without touching the
+            module.
+            1. CONTRACT: window.SMB_FILES.upload(file, meta) ->
+              Promise<{url, name, size}>. Same consume-with-guard
+              architecture as SMB_ESIGN and SMB_MAIL: the gated module
+              never assumes a provider. _smbFilesReady() gates every
+              surface.
+            2. ADD DOCUMENT: a real file input (25 MB cap) above the
+              link field when a provider is mounted; with no provider
+              the row explains that upload arrives with the
+              file-storage backend and the link path remains. Save
+              disables the button, uploads, then commits the record
+              with url + fileName + size + storage:'smb-files'.
+              Upload failure re-arms the button and keeps the modal
+              open; nothing half-saves.
+            3. EDIT DOCUMENT: Replace file input with the current
+              file named; choosing a new file swaps the stored url on
+              save. Same failure handling.
+            4. DOCUMENTS TAB: rows with an uploaded file show a
+              fileName + size chip next to the title link.
+            - HR_STORAGE_VERSION NOT bumped: additive fields on the
+              document record (fileName, size, storage) only.
+            5. SMB STRIP v1 SWEEP (audit v3.13 Section Q, Standards
+              v2.45). HR is a genuine strip consumer: the v64 hiring
+              rework ported CRM's .lead-pipe verbatim for the
+              candidate pipeline, so the new conditional Section Q
+              check fired. Swept in this pass: the locked SMB Strip
+              v1 block (SHA 71327975) pasted after Components v1; all
+              19 hand-rolled .lead-pipe / .lp-* module rules removed
+              (each verified byte-identical to block content before
+              removal); companion tokens added to the module :root
+              (--pg-slate-ink #475569 Marketing reference value,
+              --stage-col / --prev-col per-stage defaults the dynamic
+              build overrides inline). Corrects the Standards v2.45
+              per-module survey that listed HR as PASS N/A; that
+              survey ran against a pre-v64 mount.
+            Validation: audit v3.13 exit 0; render_check PASS; node
+              --check clean; 0 em-dashes outside title; style-block
+              integrity PASS; jsdom probe green.
   HR Module v85 - 2026-07-12 - TERRY QA ROUND: FIVE FIXES.
             Terry played through the module and reported six issues.
             Five fixed here; the sixth (P&D settings tab) is a
@@ -4116,6 +4214,62 @@ summary:focus-visible,
 .goal-expand{padding:0 14px 12px 36px;background:var(--sur2);border-top:0.5px solid var(--brd)}
 /* === SMB COMPONENTS v1 END === */
 
+/* === SMB STRIP v1 BEGIN === DO NOT EDIT - change strip source instead === */
+
+/* Aggregate variant - dashboards: count + sub-line + color-ramped connectors */
+/* Dashboard pipeline strip: connected nodes on a gradient line.
+   Each stage = circle (with count inside) on a horizontal line, with name + value below.
+   Line segments are colored via CSS vars set per stage (--stage-col, --prev-col),
+   so colour transitions land cleanly at each circle. */
+.dash-pipe{display:flex;gap:0;margin-bottom:16px;background:var(--sur);border:1px solid var(--brd);border-radius:8px;padding:18px 12px 14px;overflow-x:auto;position:relative}
+.dp-stage{flex:1 0 0;min-width:96px;text-align:center;cursor:pointer;padding:0 4px;position:relative;transition:transform .12s;--stage-col:var(--pg-slate-ink);--prev-col:var(--brd)}
+.dp-stage::before, .dp-stage::after{content:'';position:absolute;top:28px;height:2px;z-index:0;background:var(--brd)}
+.dp-stage::before{left:0;right:50%;background:var(--prev-col)}
+.dp-stage::after{left:50%;right:0;background:var(--stage-col)}
+.dp-stage:first-child::before{display:none}
+.dp-stage:last-child::after{display:none}
+.dp-circle{box-sizing:border-box;width:58px;height:58px;border-radius:50%;background:#fff;border:3px solid var(--stage-col);display:inline-flex;align-items:center;justify-content:center;position:relative;z-index:1;transition:transform .12s, box-shadow .12s}
+.dp-stage:hover .dp-circle{transform:scale(1.06);box-shadow:0 2px 10px rgba(0,0,0,.10)}
+.dp-count{font-size:22px;font-weight:700;color:var(--txt);line-height:1}
+.dp-name{font-size:var(--fz-xs);font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--txm);margin-top:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px}
+.dp-val{font-size:var(--fz-xs);color:var(--txd);margin-top:3px}
+.dp-div{flex:0 0 1px;align-self:stretch;background:var(--brd);margin:0 6px}
+
+/* Record variant - record headers: state marks, click-to-move on non-current stages */
+/* ── LEAD PIPE (record header progression - mirrors .dash-pipe) ── */
+.lead-pipe{display:flex;gap:0;margin-bottom:16px;background:var(--sur);border:1px solid var(--brd);border-radius:8px;padding:18px 12px 14px;overflow-x:auto;position:relative}
+.lp-stage{flex:1 0 0;min-width:96px;text-align:center;padding:0 4px;position:relative;transition:transform .12s;--circle-col:var(--brd);--line-after:var(--brd);--line-before:var(--brd)}
+.lp-stage.lp-click{cursor:pointer}
+.lp-stage::before, .lp-stage::after{content:'';position:absolute;top:28px;height:2px;z-index:0}
+.lp-stage::before{left:0;right:50%;background:var(--line-before)}
+.lp-stage::after{left:50%;right:0;background:var(--line-after)}
+.lp-stage:first-child::before{display:none}
+.lp-stage:last-child::after{display:none}
+.lp-circle{box-sizing:border-box;width:58px;height:58px;border-radius:50%;background:#fff;border:3px solid var(--brd);display:inline-flex;align-items:center;justify-content:center;position:relative;z-index:1;transition:transform .12s, box-shadow .12s;color:var(--txd)}
+.lp-stage.lp-done .lp-circle{background:var(--circle-col);border-color:var(--circle-col);color:#fff}
+.lp-stage.lp-cur .lp-circle{background:var(--circle-col);border-color:var(--circle-col);color:#fff}
+.lp-stage.lp-lost .lp-circle{background:var(--red);border-color:var(--red);color:#fff}
+.lp-stage.lp-click:hover .lp-circle{transform:scale(1.06);box-shadow:0 2px 10px rgba(0,0,0,.10)}
+.lp-mark{font-size:22px;font-weight:700;line-height:1}
+.lp-name{font-size:var(--fz-xs);font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--txm);margin-top:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px}
+.lp-stage.lp-done .lp-name{color:var(--txb)}
+.lp-stage.lp-cur .lp-name{color:var(--txt);font-weight:700}
+
+/* Record variant extensions (BD): date chips, lost-name red, paused/Dormant */
+.lead-pipe.lp-dated .lp-stage{min-width:120px}
+.lp-date{margin-top:6px;display:flex;justify-content:center}
+.lp-date input[type=date]{font-size:var(--fz-xs);color:var(--txd);border:1px solid var(--brd);border-radius:4px;padding:2px 4px;background:var(--bg);font-family:inherit;cursor:pointer;width:110px;max-width:110px}
+.lp-date input[type=date]:hover{border-color:var(--blu)}
+.lp-date input[type=date]:focus{outline:none;border-color:var(--blu)}
+.lp-stage.lp-lost .lp-name{color:var(--red);font-weight:700}
+.lp-datechip{position:relative;display:inline-block;font-size:var(--fz-xs);line-height:1.7;color:var(--txd);cursor:pointer;border:1px solid var(--brd);border-radius:10px;padding:0 8px;background:var(--bg);white-space:nowrap}
+.lp-datechip:hover{border-color:var(--blu);color:var(--blu)}
+.lp-datechip input[type=date]{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0;margin:0}
+.lead-pipe.lp-paused{opacity:.55}
+
+/* === SMB STRIP v1 END === */
+
+
 
 /* v85: inline-edit input inside the profile Personal tab's Contact
    and Emergency Contact rows. Sits inside .metar > .metar-v so it
@@ -4229,7 +4383,10 @@ summary:focus-visible,
   --line-before: var(--brd);
   --module-accent: #3f9d8a;
   --bluh: #1d4ed8;      /* Components v1 .btn-blu:hover companion (VSP reference value) */
-  --reds: #fca5a5;      /* Components v1 .btn-red border companion (VSP reference value) */ /* v45: HR = teal. Distinct from VSP blue #5b8fd6, CRM #c0663f, BD #8a6fb8; not confusable with status --grn */
+  --reds: #fca5a5;      /* Components v1 .btn-red border companion (VSP reference value) */
+  --pg-slate-ink: #475569;  /* SMB Strip v1 aggregate default node hue (Marketing reference value) */
+  --stage-col: var(--pg-slate-ink); /* SMB Strip v1 per-stage var; the dynamic build overrides inline */
+  --prev-col: var(--brd);           /* SMB Strip v1 per-stage var; the dynamic build overrides inline */ /* v45: HR = teal. Distinct from VSP blue #5b8fd6, CRM #c0663f, BD #8a6fb8; not confusable with status --grn */
 
   /* Border-radius tokens */
   --r-card: 8px;
@@ -4639,31 +4796,7 @@ tr:hover .hb-id{background:var(--sur2)}
 .hb-empty{color:var(--txd)}
 .hb-na{color:var(--txd);cursor:default}
 .hb-next .hb-nx{font-size:var(--fz-xs);color:var(--txd);font-weight:600}
-/* v64: Connected-Nodes Progression Strip v1 - the CRM/BD .lead-pipe
-   component verbatim (CRM lead detail is the reference; BD adds the
-   lp-dated variant). One component, both variants: Record (candidate
-   panel, marks + date chips) and Aggregate (pipeline view, counts).
-   Replaces the retired cn-* dialect so HR looks identical to CRM/BD. */
-.lead-pipe{display:flex;gap:0;margin-bottom:16px;background:var(--sur);border:1px solid var(--brd);border-radius:8px;padding:18px 12px 14px;overflow-x:auto;position:relative}
-.lp-stage{flex:1 0 0;min-width:96px;text-align:center;padding:0 4px;position:relative;transition:transform .12s;--circle-col:var(--brd);--line-after:var(--brd);--line-before:var(--brd)}
-.lp-stage.lp-click{cursor:pointer}
-.lp-stage::before, .lp-stage::after{content:'';position:absolute;top:28px;height:2px;z-index:0}
-.lp-stage::before{left:0;right:50%;background:var(--line-before)}
-.lp-stage::after{left:50%;right:0;background:var(--line-after)}
-.lp-stage:first-child::before{display:none}
-.lp-stage:last-child::after{display:none}
-.lp-circle{box-sizing:border-box;width:58px;height:58px;border-radius:50%;background:#fff;border:3px solid var(--brd);display:inline-flex;align-items:center;justify-content:center;position:relative;z-index:1;transition:transform .12s, box-shadow .12s;color:var(--txd)}
-.lp-stage.lp-done .lp-circle{background:var(--circle-col);border-color:var(--circle-col);color:#fff}
-.lp-stage.lp-cur .lp-circle{background:var(--circle-col);border-color:var(--circle-col);color:#fff}
-.lp-stage.lp-lost .lp-circle{background:var(--red);border-color:var(--red);color:#fff}
-.lp-stage.lp-click:hover .lp-circle{transform:scale(1.06);box-shadow:0 2px 10px rgba(0,0,0,.10)}
 .lp-mark{font-size:22px;font-weight:700;line-height:1}
-.lp-name{font-size:var(--fz-xs);font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--txm);margin-top:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px}
-.lp-stage.lp-done .lp-name{color:var(--txb)}
-.lp-stage.lp-cur .lp-name{color:var(--txt);font-weight:700}
-.lp-stage.lp-lost .lp-name{color:var(--red);font-weight:700}
-.lead-pipe.lp-dated .lp-stage{min-width:120px}
-.lp-date{margin-top:6px;display:flex;justify-content:center}
 .lp-datechip{position:relative;display:inline-block;font-size:var(--fz-xs);line-height:1.7;color:var(--txd);cursor:default;border:1px solid var(--brd);border-radius:10px;padding:0 8px;background:var(--bg);white-space:nowrap}
 .kanban-card[draggable=true]{cursor:grab}
 .kanban-card[draggable=true]:active{cursor:grabbing}
@@ -8319,7 +8452,7 @@ function renderTabDocuments(p, canHR){
     rows.forEach(function(d){
       var titleCell = d.url ? '<a href="'+escapeHTML(d.url)+'" target="_blank" rel="noopener" style="color:var(--blu);font-weight:600;text-decoration:none">'+escapeHTML(d.title||'-')+' &#8599;</a>' : '<span style="font-weight:600;color:var(--txt)">'+escapeHTML(d.title||'-')+'</span>';
       h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--bg);gap:10px;flex-wrap:wrap">';
-      h += '<div style="flex:1;min-width:200px"><div>'+titleCell+'</div>';
+      h += '<div style="flex:1;min-width:200px"><div>'+titleCell+(d.fileName?' <span class="chip c-blu" style="font-size:var(--fz-xs)">'+escapeHTML(d.fileName)+(d.size?' \u00b7 '+Math.max(1,Math.round(d.size/1024))+' KB':'')+'</span>':'')+'</div>';
       if(d.notes) h += '<div style="color:var(--txm);font-size:var(--fz-base);margin-top:2px">'+escapeHTML(d.notes)+'</div>';
       h += '</div>';
       h += '<div style="color:var(--txd);font-size:var(--fz-base);min-width:90px;text-align:right">'+(d.uploadedDate?fmtD(d.uploadedDate):'-')+'</div>';
@@ -11728,7 +11861,7 @@ function renderMyHR(){
       var tone=d===null?'var(--txm)':(d<=0?'var(--redt)':(d<=90?'var(--ambt)':'var(--grnt)'));
       var lbl=d===null?'No expiry':(d<=0?'Expired':(d<=90?'Expires in '+d+'d':'Valid'));
       h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bg);gap:10px;flex-wrap:wrap">';
-      h+='<div style="flex:1;min-width:180px"><div style="font-weight:600;color:var(--txt)">'+escapeHTML(c.type)+'</div><div style="color:var(--txd)">'+(c.expiry?'Expires '+fmtDateShort(c.expiry):'No expiry on file')+'</div></div>';
+      h+='<div style="flex:1;min-width:180px"><div style="font-weight:600;color:var(--txt)">'+escapeHTML(c.type)+(c.fileUrl?' <a href="'+escAttr(c.fileUrl)+'" target="_blank" rel="noopener" title="View my ticket" style="color:var(--blu);text-decoration:none;font-weight:400">view &#8599;</a>':'')+'</div><div style="color:var(--txd)">'+(c.expiry?'Expires '+fmtDateShort(c.expiry):'No expiry on file')+'</div></div>';
       h+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
       h+='<span style="font-weight:700;color:'+tone+'">'+lbl+'</span>';
       if(c.expiry) h+='<button class="btn btn-sm" onclick="icsCert(\''+me.id+'\','+idx+')" title="Download .ics to remind you of expiry">'+SVG_IC.calendar.replace('<svg ','<svg style="width:12px;height:12px;margin-right:4px;vertical-align:middle" ')+'Add to calendar</button>';
@@ -12003,9 +12136,50 @@ function _openInfoModal(title, bodyHtml){
 }
 function closeInfoModal(){ document.getElementById('modal-root').innerHTML = ''; }
 
+/* v87: real self-serve renewal. The employee photographs the renewed
+   ticket on their phone, uploads it, and sets the new expiry; HR sees
+   the activity log entry and the updated expiry RAG. Replaces the
+   v34 stub toast. Works date-only when no file-storage provider is
+   mounted (updating the expiry is still valuable on its own). */
 function uploadCertRenewal(personId, type){
-  if(typeof toast==='function') toast('Renewal upload opens here once the document storage backend is connected.');
-  else alert('Renewal upload opens here once the document storage backend is connected.');
+  var p = ppl.find(function(x){return x.id===personId}); if(!p) return;
+  var c = (p.certifications||[]).find(function(x){return x.type===type}); if(!c) return;
+  var html = '<div class="modal-overlay" onclick="overlayDismiss(event,&apos;closeCertRenewal&apos;)"><div class="modal" style="width:480px" onkeydown="event.stopPropagation()" onclick="event.stopPropagation()">';
+  html += '<div class="modal-h"><div><div class="modal-h-t">Renew '+escapeHTML(type)+'</div><div class="modal-h-s">Upload the renewed ticket and set the new expiry</div></div><button class="modal-x" type="button" onclick="closeCertRenewal()">\u00d7</button></div>';
+  html += '<div class="modal-b">';
+  html += '<div style="margin-bottom:14px"><label class="form-l">New expiry date</label><input type="date" class="form-i" id="cr-expiry" value="'+escAttr(c.expiry||'')+'"></div>';
+  html += _docFileRow('cr-file', c.fileName);
+  html += '<div class="kpi-card-sub">A phone photo of the card or the certificate PDF both work.</div>';
+  html += '</div>';
+  html += '<div class="modal-f"><button class="btn" type="button" onclick="closeCertRenewal()">Cancel</button><button class="btn btn-gold" type="button" id="cr-save-btn" onclick="saveCertRenewal(\''+personId+'\',\''+escAttr(type).replace(/\047/g,"\\047")+'\')">Save renewal</button></div>';
+  html += '</div></div>';
+  document.getElementById('modal-root').innerHTML = html;
+}
+function closeCertRenewal(){ document.getElementById('modal-root').innerHTML=''; }
+function saveCertRenewal(personId, type){
+  var p = ppl.find(function(x){return x.id===personId}); if(!p) return;
+  var c = (p.certifications||[]).find(function(x){return x.type===type}); if(!c) return;
+  var newExpiry = (document.getElementById('cr-expiry')||{}).value || '';
+  var btn = document.getElementById('cr-save-btn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Saving...'; }
+  _docUploadIfChosen('cr-file', personId, 'hr-certs').then(function(up){
+    if(!up && !newExpiry){
+      if(btn){ btn.disabled = false; btn.textContent = 'Save renewal'; }
+      toast('Nothing to save','Set the new expiry date, attach the renewed ticket, or both.','info');
+      return;
+    }
+    var oldExpiry = c.expiry || 'none';
+    if(newExpiry) c.expiry = newExpiry;
+    if(up){ c.fileUrl = up.url; c.fileName = up.fileName; c.size = up.size; }
+    save();
+    if(typeof logActivity==='function') logActivity('Certification renewed by '+p.first+' '+p.last+': '+type+(newExpiry?' (expiry '+oldExpiry+' \u2192 '+newExpiry+')':'')+(up?' (ticket file uploaded)':''));
+    closeCertRenewal();
+    renderPage();
+    toast('Renewal saved', type+' updated.'+(up?' Ticket file on record.':''), 'success');
+  }).catch(function(err){
+    if(btn){ btn.disabled = false; btn.textContent = 'Save renewal'; }
+    toast('Upload failed', (err && err.message) || 'The file could not be uploaded. Nothing was saved.', 'error');
+  });
 }
 
 /* ---------- 3. E-SIGNATURE WIRING (to window.SMB_ESIGN) ---------- */
@@ -14219,7 +14393,7 @@ function openBenefitsPlanEditor(){
   html += '</div>';
   html += '<div class="g2" style="margin-bottom:14px">';
   html += '<div><label class="form-l">Group number</label><input type="text" class="form-i" id="bp-group" value="'+escAttr(b.groupNumber)+'"></div>';
-  html += '<div><label class="form-l">Benefits booklet link</label><input type="text" class="form-i" id="bp-booklet" value="'+escAttr(b.bookletUrl)+'" placeholder="https://... (Drive, carrier portal)"></div>';
+  html += '<div><label class="form-l">Benefits booklet</label><div style="display:flex;gap:6px;align-items:center"><input type="text" class="form-i" id="bp-booklet" value="'+escAttr(b.bookletUrl)+'" placeholder="https://... or use Upload" style="flex:1">'+_uploadBtnHtml('bp-booklet','benefits','company')+'</div></div>';
   html += '</div>';
   html += '<div style="font-weight:700;color:var(--txm);font-size:var(--fz-body);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Provider contact (who employees call)</div>';
   html += '<div class="g2" style="margin-bottom:14px">';
@@ -14228,7 +14402,7 @@ function openBenefitsPlanEditor(){
   html += '</div>';
   html += '<div style="margin-bottom:14px"><label class="form-l">Email</label><input type="text" class="form-i" id="bp-cemail" value="'+escAttr(b.contactEmail)+'"></div>';
   html += '<div><label class="form-l">Notes for employees</label><textarea class="form-i" id="bp-notes" rows="2" placeholder="e.g. Claims go through the provider app; enrolment changes through Lisa.">'+escapeHTML(b.notes||'')+'</textarea></div>';
-  html += '<div style="background:var(--sur2);border-radius:6px;padding:8px 12px;margin-top:12px;font-size:var(--fz-body);color:var(--txm)">The booklet and enrolment forms live where they live today (Drive, carrier portal); paste the link. File upload arrives with the storage backend.</div>';
+  html += '<div style="background:var(--sur2);border-radius:6px;padding:8px 12px;margin-top:12px;font-size:var(--fz-body);color:var(--txm)">'+(_smbFilesReady()?'Upload the booklet PDF directly, or paste a link to the carrier portal.':'The booklet and enrolment forms live where they live today (Drive, carrier portal); paste the link. Direct upload arrives with the storage backend.')+'</div>';
   html += '</div>';
   html += '<div class="modal-f"><button class="btn" onclick="closeBenefitsPlanEditor()">Cancel</button><button class="btn btn-gold" onclick="saveBenefitsPlan()">Save plan</button></div>';
   html += '</div></div>';
@@ -14262,7 +14436,7 @@ function openCompanyDocsEditor(){
   if(!canSeeHRPages()){ toast('Restricted','Only HR can edit company document links.','error'); return; }
   var list = _companyDocs();
   var html = '<div class="modal-overlay" onclick="overlayDismiss(event,&apos;closeCompanyDocsEditor&apos;)"><div class="modal" style="width:560px">';
-  html += '<div class="modal-h"><div><div class="modal-h-t">Company documents</div><div class="modal-h-s">Links every employee sees on My HR. Point at Playbooks or Drive; content lives there, not here.</div></div><button class="modal-x" onclick="closeCompanyDocsEditor()">\u00d7</button></div>';
+  html += '<div class="modal-h"><div><div class="modal-h-t">Company documents</div><div class="modal-h-s">What every employee sees on My HR. Upload the PDF directly, or point at Playbooks or Drive.</div></div><button class="modal-x" onclick="closeCompanyDocsEditor()">\u00d7</button></div>';
   html += '<div class="modal-b" id="cdocs-body">';
   html += _companyDocsRows(list);
   html += '</div>';
@@ -14270,14 +14444,18 @@ function openCompanyDocsEditor(){
   html += '</div></div>';
   document.getElementById('modal-root').innerHTML = html;
 }
+var _cdocsRowSeq = 0;
 function _companyDocsRows(list){
   var h = '';
   if(!list.length) list = [{title:'',url:''}];
+  var canUpload = _smbFilesReady();
   list.forEach(function(d,i){
-    h += '<div class="cdocs-row" style="display:grid;grid-template-columns:1fr 1.4fr auto;gap:8px;margin-bottom:8px;align-items:center">';
+    var uid = 'cd-url-'+(++_cdocsRowSeq)+'-'+Date.now()%100000;
+    h += '<div class="cdocs-row" style="display:grid;grid-template-columns:1fr 1.4fr auto auto;gap:8px;margin-bottom:8px;align-items:center">';
     h += '<input type="text" class="form-i cd-title" value="'+escAttr(d.title||'')+'" placeholder="Title (e.g. Employee Handbook)">';
-    h += '<input type="text" class="form-i cd-url" value="'+escAttr(d.url||'')+'" placeholder="https://...">';
-    h += '<button class="btn btn-sm" onclick="this.parentElement.remove()" title="Remove this link">\u00d7</button>';
+    h += '<input type="text" class="form-i cd-url" id="'+uid+'" value="'+escAttr(d.url||'')+'" placeholder="https://... or use Upload">';
+    h += canUpload ? '<button type="button" class="btn btn-sm" onclick="smbFilesPickAndFill(\''+uid+'\',\'company-docs\',\'company\',this)">Upload</button>' : '<span></span>';
+    h += '<button type="button" class="btn btn-sm" onclick="this.parentElement.remove()" title="Remove this link">\u00d7</button>';
     h += '</div>';
   });
   return h;
@@ -15390,10 +15568,10 @@ function _loadHiringBlueprint(){
    name and optionally a link (Google Drive, SharePoint) as a stub. */
 function openAppTemplateEditor(){
   if(!canSeeHRPages()){ if(typeof toast==='function') toast('Only HR can edit the application template.'); return; }
-  var body = '<div style="color:var(--txm);font-size:var(--fz-body);margin-bottom:14px">Configure the employment application PDF that HR sends to inquiring candidates. Storage moves to Backblaze B2 when the doc storage backend is live; until then, record the filename and a shared link.</div>';
+  var body = '<div style="color:var(--txm);font-size:var(--fz-body);margin-bottom:14px">Configure the employment application PDF that HR sends to inquiring candidates.'+(_smbFilesReady()?' Upload the PDF directly, or paste a shared link.':' Record the filename and a shared link; direct upload arrives with the storage backend.')+'</div>';
   body += '<div style="margin-bottom:14px"><label class="form-l">Template name</label><input id="apt-name" class="form-i" value="'+escAttr(HIRE_APP_TEMPLATE.name||'')+'"></div>';
   body += '<div style="margin-bottom:14px"><label class="form-l">File name</label><input id="apt-file" class="form-i" placeholder="e.g. LIDA_Homes_Application.pdf" value="'+escAttr(HIRE_APP_TEMPLATE.fileName||'')+'"></div>';
-  body += '<div style="margin-bottom:14px"><label class="form-l">Shared link (Google Drive / SharePoint / temporary)</label><input id="apt-url" class="form-i" placeholder="https://..." value="'+escAttr(HIRE_APP_TEMPLATE.fileUrl||'')+'"></div>';
+  body += '<div style="margin-bottom:14px"><label class="form-l">Application PDF</label><div style="display:flex;gap:6px;align-items:center"><input id="apt-url" class="form-i" placeholder="https://... or use Upload" value="'+escAttr(HIRE_APP_TEMPLATE.fileUrl||'')+'" style="flex:1">'+_uploadBtnHtml('apt-url','hiring-templates','blueprint')+'</div><div class="kpi-card-sub" style="margin-top:4px">Uploading also fills the file name above.</div></div>';
   body += '<div style="margin-bottom:14px"><label class="form-l">Notes for HR</label><textarea id="apt-notes" class="form-i" rows="2">'+escapeHTML(HIRE_APP_TEMPLATE.notes||'')+'</textarea></div>';
   body += '<div style="margin-bottom:14px"><label class="form-l">Packet email subject</label><input id="apt-esubj" class="form-i" value="'+escAttr(HIRE_APP_TEMPLATE.emailSubject||'')+'"><div class="kpi-card-sub" style="margin-top:4px">Placeholders: {FIRST} {ROLE} {COMPANY}</div></div>';
   body += '<div style="margin-bottom:14px"><label class="form-l">Packet email body</label><textarea id="apt-ebody" class="form-i" rows="9">'+escapeHTML(HIRE_APP_TEMPLATE.emailBody||'')+'</textarea><div class="kpi-card-sub" style="margin-top:4px">Placeholders: {FIRST} {ROLE} {COMPANY} {SENDER}. {SAMPLES} inserts the project-samples line only for roles that require it.</div></div>';
@@ -15412,8 +15590,10 @@ function openAppTemplateEditor(){
 function closeAppTemplate(){ document.getElementById('modal-root').innerHTML=''; }
 function saveAppTemplate(){
   HIRE_APP_TEMPLATE.name = (document.getElementById('apt-name')||{}).value || HIRE_APP_TEMPLATE.name;
-  HIRE_APP_TEMPLATE.fileName = (document.getElementById('apt-file')||{}).value || '';
-  HIRE_APP_TEMPLATE.fileUrl = (document.getElementById('apt-url')||{}).value || '';
+  var _aptUrlEl = document.getElementById('apt-url');
+  var _aptUploadedName = _aptUrlEl ? (_aptUrlEl.getAttribute('data-uploaded-name')||'') : '';
+  HIRE_APP_TEMPLATE.fileName = (document.getElementById('apt-file')||{}).value || _aptUploadedName || '';
+  HIRE_APP_TEMPLATE.fileUrl = (_aptUrlEl||{}).value || '';
   HIRE_APP_TEMPLATE.notes = (document.getElementById('apt-notes')||{}).value || '';
   HIRE_APP_TEMPLATE.emailSubject = (document.getElementById('apt-esubj')||{}).value || HIRE_APP_TEMPLATE.emailSubject;
   HIRE_APP_TEMPLATE.emailBody = (document.getElementById('apt-ebody')||{}).value || HIRE_APP_TEMPLATE.emailBody;
@@ -16600,9 +16780,9 @@ function conductInterview(cid, stageType){
     h+='<div style="font-weight:700;color:var(--txm);font-size:var(--fz-body);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px">2. Receive the packet</div>';
     h+='<div class="form-note">Record each item the day it arrives. Nothing else is scheduled until the signed application is on file; the digital check reads its consent from it.</div>';
     h+='<div style="margin:12px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><label class="form-l" style="margin:0;min-width:220px" for="iv-ph-signed-date">Signed application received</label><input type="date" class="form-i" id="iv-ph-signed-date" style="width:170px" value="'+escAttr(phSigned)+'" onchange="phSetSigned(\''+c.id+'\',this.value)"><span class="kpi-card-sub">carries the digital-review consent</span></div>';
-    h+='<div style="margin:12px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><label class="form-l" style="margin:0;min-width:220px" for="iv-ph-resume-date">Resume on file</label><input type="date" class="form-i" id="iv-ph-resume-date" style="width:170px" value="'+escAttr(phResume)+'" onchange="phSetResume(\''+c.id+'\',this.value)"><span class="kpi-card-sub">counts if it arrived before the packet went out</span></div>';
+    h+='<div style="margin:12px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><label class="form-l" style="margin:0;min-width:220px" for="iv-ph-resume-date">Resume on file</label><input type="date" class="form-i" id="iv-ph-resume-date" style="width:170px" value="'+escAttr(phResume)+'" onchange="phSetResume(\''+c.id+'\',this.value)">'+(c.resumeFileUrl?'<a href="'+escAttr(c.resumeFileUrl)+'" target="_blank" rel="noopener" class="chip c-blu" style="text-decoration:none;font-size:var(--fz-xs)">'+escapeHTML(c.resumeFileName||'view resume')+' &#8599;</a>':'')+(_smbFilesReady()?'<button type="button" class="btn btn-sm" onclick="phAttachFile(\''+c.id+'\',\'resume\',this)">'+(c.resumeFileUrl?'Replace':'Attach resume')+'</button>':'')+'<span class="kpi-card-sub">counts if it arrived before the packet went out</span></div>';
     if(phSampReq){
-      h+='<div style="margin:12px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><label class="form-l" style="margin:0;min-width:220px" for="iv-ph-samples-date">Project samples received</label><input type="date" class="form-i" id="iv-ph-samples-date" style="width:170px" value="'+escAttr(phSamples)+'" onchange="phSetSamples(\''+c.id+'\',this.value)"><span class="kpi-card-sub">three samples of comparable projects; required for this role</span></div>';
+      h+='<div style="margin:12px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><label class="form-l" style="margin:0;min-width:220px" for="iv-ph-samples-date">Project samples received</label><input type="date" class="form-i" id="iv-ph-samples-date" style="width:170px" value="'+escAttr(phSamples)+'" onchange="phSetSamples(\''+c.id+'\',this.value)">'+(c.samplesFileUrl?'<a href="'+escAttr(c.samplesFileUrl)+'" target="_blank" rel="noopener" class="chip c-blu" style="text-decoration:none;font-size:var(--fz-xs)">'+escapeHTML(c.samplesFileName||'view samples')+' &#8599;</a>':'')+(_smbFilesReady()?'<button type="button" class="btn btn-sm" onclick="phAttachFile(\''+c.id+'\',\'samples\',this)">'+(c.samplesFileUrl?'Replace':'Attach samples')+'</button>':'')+'<span class="kpi-card-sub">three samples of comparable projects; one PDF or zip is fine; required for this role</span></div>';
     } else {
       h+='<div style="margin:12px 0;color:var(--txd);font-size:var(--fz-base)">Project samples: not required for this role. Turn this on per role under Application packet on the role record.</div>';
     }
@@ -17174,6 +17354,46 @@ function phSetResume(cid, val){
   c.resumeReceivedDate = val || '';
   saveExtraState();
   conductInterview(cid, 'preHire');
+}
+/* v87: attach the actual resume or samples file to the candidate.
+   Screeners read them from the pipeline instead of digging through
+   email. Uploading auto-sets the matching receipt date when it is
+   empty: the act is the record, same philosophy as Send packet email. */
+function phAttachFile(cid, kind, btn){
+  if(!_smbFilesReady()){ toast('Upload not connected','Direct file upload arrives with the file-storage backend.','info'); return; }
+  var c = candidates.find(function(x){return x.id===cid;}); if(!c) return;
+  var picker = document.createElement('input');
+  picker.type = 'file';
+  picker.style.display = 'none';
+  picker.onchange = function(){
+    var file = picker.files && picker.files[0];
+    if(!file) return;
+    if(file.size > 25*1024*1024){ toast('Too large','File is over the 25 MB limit.','error'); return; }
+    var prev = btn ? btn.textContent : '';
+    if(btn){ btn.disabled = true; btn.textContent = 'Uploading...'; }
+    window.SMB_FILES.upload(file, {tenantId:(window.SMB_TENANT&&window.SMB_TENANT.tenantId)||'lida-001', personId:cid, scope:'hiring-candidates'})
+      .then(function(res){
+        if(kind==='resume'){
+          c.resumeFileUrl = res.url; c.resumeFileName = res.name||file.name;
+          if(!c.resumeReceivedDate) c.resumeReceivedDate = todayISO();
+        } else {
+          c.samplesFileUrl = res.url; c.samplesFileName = res.name||file.name;
+          var iv = _phIv(c);
+          if(!iv.answers.samplesReceivedDate) iv.answers.samplesReceivedDate = todayISO();
+        }
+        saveExtraState();
+        if(typeof _hcLog==='function') _hcLog(c, 'note', (kind==='resume'?'Resume':'Project samples')+' file attached: '+(res.name||file.name));
+        toast('File attached', (res.name||file.name)+' is on the candidate record.', 'success');
+        conductInterview(cid, 'preHire');
+      })
+      .catch(function(err){
+        if(btn){ btn.disabled = false; btn.textContent = prev; }
+        toast('Upload failed', (err && err.message) || 'Try again.', 'error');
+      });
+    if(picker.parentNode) picker.parentNode.removeChild(picker);
+  };
+  document.body.appendChild(picker);
+  picker.click();
 }
 function phSetSamples(cid, val){
   var c = candidates.find(function(x){return x.id===cid;}); if(!c) return;
@@ -18999,7 +19219,7 @@ function renderCerts(){
       else statusChip = '<span class="chip c-grn">'+d+'d remaining</span>';
       h += '<tr>';
       h += '<td><div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="openProfile(\''+x.person.id+'\')"><span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:'+av.bg+';color:'+av.fg+';font-size:var(--fz-body);font-weight:700">'+escapeHTML(x.person.initials)+'</span><div><div style="font-weight:600">'+escapeHTML(x.person.first+' '+x.person.last)+'</div><div style="font-size:var(--fz-body);color:var(--txm)">'+escapeHTML(x.person.role||'')+'</div></div></div></td>';
-      h += '<td><div style="font-weight:600">'+escapeHTML(x.cert.type)+'</div>'+(x.cert.number?'<div style="font-size:var(--fz-body);color:var(--txm)">#'+escapeHTML(x.cert.number)+'</div>':'')+'</td>';
+      h += '<td><div style="font-weight:600">'+escapeHTML(x.cert.type)+(x.cert.fileUrl?' <a href="'+escAttr(x.cert.fileUrl)+'" target="_blank" rel="noopener" title="View ticket file" style="color:var(--blu);text-decoration:none">&#128206;</a>':'')+'</div>'+(x.cert.number?'<div style="font-size:var(--fz-body);color:var(--txm)">#'+escapeHTML(x.cert.number)+'</div>':'')+'</td>';
       h += '<td>'+escapeHTML(x.cert.issuer||'')+'</td>';
       h += '<td>'+(x.cert.issued?fmtD(x.cert.issued):'-')+'</td>';
       h += '<td>'+(x.cert.expiry?fmtD(x.cert.expiry):'-')+'</td>';
@@ -19040,9 +19260,10 @@ function openAddCert(){
   html += '<div><label class="form-l">Expiry date</label><input type="date" class="form-i" id="cv-expiry"></div>';
   html += '<div style="padding-top:24px"><label style="display:flex;align-items:center;gap:6px;font-size:var(--fz-body)"><input type="checkbox" id="cv-noexpiry" onchange="document.getElementById(\'cv-expiry\').disabled=this.checked"> No expiry</label></div>';
   html += '</div>';
+  html += _docFileRow('cv-file');
   html += '<div><label class="form-l">Notes</label><textarea class="form-i" id="cv-notes" rows="2"></textarea></div>';
   html += '</div>';
-  html += '<div class="modal-f"><button class="btn" onclick="closeCertModal()">Cancel</button><button class="btn btn-gold" onclick="saveNewCert()">Add certification</button></div>';
+  html += '<div class="modal-f"><button class="btn" onclick="closeCertModal()">Cancel</button><button class="btn btn-gold" id="cv-save-btn" onclick="saveNewCert()">Add certification</button></div>';
   html += '</div></div>';
   document.getElementById('modal-root').innerHTML = html;
   setTimeout(function(){
@@ -19062,22 +19283,30 @@ function saveNewCert(){
   var type = typeSel === '__custom' ? document.getElementById('cv-custom').value.trim() : typeSel;
   if(!type){ toast('Missing type','Cert type is required.','error'); return; }
   var noExpiry = document.getElementById('cv-noexpiry').checked;
-  var cert = {
-    id:'cert'+Date.now(),
-    type:type,
-    number:document.getElementById('cv-num').value.trim(),
-    issuer:document.getElementById('cv-issuer').value.trim(),
-    issued:document.getElementById('cv-issued').value,
-    expiry:noExpiry ? '' : document.getElementById('cv-expiry').value,
-    notes:document.getElementById('cv-notes').value.trim()
-  };
-  if(!p.certifications) p.certifications = [];
-  p.certifications.push(cert);
-  save();
-  logActivity('Certification added: '+p.first+' '+p.last+' - '+type);
-  closeCertModal();
-  renderPage();
-  toast('Certification added', type+' added to '+p.first+' '+p.last+'.', 'success');
+  var btn = document.getElementById('cv-save-btn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Saving...'; }
+  _docUploadIfChosen('cv-file', pid, 'hr-certs').then(function(up){
+    var cert = {
+      id:'cert'+Date.now(),
+      type:type,
+      number:document.getElementById('cv-num').value.trim(),
+      issuer:document.getElementById('cv-issuer').value.trim(),
+      issued:document.getElementById('cv-issued').value,
+      expiry:noExpiry ? '' : document.getElementById('cv-expiry').value,
+      notes:document.getElementById('cv-notes').value.trim()
+    };
+    if(up){ cert.fileUrl = up.url; cert.fileName = up.fileName; cert.size = up.size; }
+    if(!p.certifications) p.certifications = [];
+    p.certifications.push(cert);
+    save();
+    logActivity('Certification added: '+p.first+' '+p.last+' - '+type+(up?' (ticket file uploaded)':''));
+    closeCertModal();
+    renderPage();
+    toast('Certification added', type+(up?' with ticket file':'')+' added to '+p.first+' '+p.last+'.', 'success');
+  }).catch(function(err){
+    if(btn){ btn.disabled = false; btn.textContent = 'Add certification'; }
+    toast('Upload failed', (err && err.message) || 'The ticket file could not be uploaded. The certification was not saved.', 'error');
+  });
 }
 function openEditCert(personId, certId){
   var p = ppl.find(function(x){return x.id===personId});
@@ -19096,10 +19325,12 @@ function openEditCert(personId, certId){
   html += '<div><label class="form-l">Issued date</label><input type="date" class="form-i" id="ce-issued" value="'+(c.issued||'')+'"></div>';
   html += '</div>';
   html += '<div style="margin-bottom:14px"><label class="form-l">Expiry date</label><input type="date" class="form-i" id="ce-expiry" value="'+(c.expiry||'')+'"></div>';
+  if(c.fileUrl) html += '<div style="margin-bottom:14px"><a href="'+escAttr(c.fileUrl)+'" target="_blank" rel="noopener" class="chip c-blu" style="text-decoration:none">View ticket'+(c.fileName?': '+escapeHTML(c.fileName):'')+' &#8599;</a></div>';
+  html += _docFileRow('ce-file', c.fileName);
   html += '<div><label class="form-l">Notes</label><textarea class="form-i" id="ce-notes" rows="2">'+escapeHTML(c.notes||'')+'</textarea></div>';
   html += '</div>';
   html += '<div class="modal-f"><button class="btn btn-red" onclick="deleteCert(\''+personId+'\',\''+certId+'\')">Delete</button>';
-  html += '<div style="display:flex;gap:8px"><button class="btn" onclick="closeCertModal()">Cancel</button><button class="btn btn-gold" onclick="saveEditCert(\''+personId+'\',\''+certId+'\')">Save</button></div>';
+  html += '<div style="display:flex;gap:8px"><button class="btn" onclick="closeCertModal()">Cancel</button><button class="btn btn-gold" id="ce-save-btn" onclick="saveEditCert(\''+personId+'\',\''+certId+'\')">Save</button></div>';
   html += '</div></div></div>';
   document.getElementById('modal-root').innerHTML = html;
 }
@@ -19108,17 +19339,25 @@ function saveEditCert(personId, certId){
   if(!p) return;
   var c = (p.certifications||[]).find(function(x){return x.id===certId});
   if(!c) return;
-  c.type = document.getElementById('ce-type').value.trim();
-  c.number = document.getElementById('ce-num').value.trim();
-  c.issuer = document.getElementById('ce-issuer').value.trim();
-  c.issued = document.getElementById('ce-issued').value;
-  c.expiry = document.getElementById('ce-expiry').value;
-  c.notes = document.getElementById('ce-notes').value.trim();
-  save();
-  logActivity('Certification updated: '+p.first+' '+p.last+' - '+c.type);
-  closeCertModal();
-  renderPage();
-  toast('Certification saved', c.type+' updated.', 'success');
+  var btn = document.getElementById('ce-save-btn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Saving...'; }
+  _docUploadIfChosen('ce-file', personId, 'hr-certs').then(function(up){
+    c.type = document.getElementById('ce-type').value.trim();
+    c.number = document.getElementById('ce-num').value.trim();
+    c.issuer = document.getElementById('ce-issuer').value.trim();
+    c.issued = document.getElementById('ce-issued').value;
+    c.expiry = document.getElementById('ce-expiry').value;
+    c.notes = document.getElementById('ce-notes').value.trim();
+    if(up){ c.fileUrl = up.url; c.fileName = up.fileName; c.size = up.size; }
+    save();
+    logActivity('Certification updated: '+p.first+' '+p.last+' - '+c.type+(up?' (ticket file replaced)':''));
+    closeCertModal();
+    renderPage();
+    toast('Certification saved', c.type+' updated.', 'success');
+  }).catch(function(err){
+    if(btn){ btn.disabled = false; btn.textContent = 'Save'; }
+    toast('Upload failed', (err && err.message) || 'The ticket file could not be uploaded. The certification was not saved.', 'error');
+  });
 }
 function deleteCert(personId, certId){
   var p = ppl.find(function(x){return x.id===personId});
@@ -19244,10 +19483,11 @@ function openAddDoc(personId){
   html += '</select></div>';
   html += '<div><label class="form-l">Date</label><input type="date" class="form-i" id="dv-date" value="'+todayISO()+'"></div>';
   html += '</div>';
+  html += _docFileRow('dv-file');
   html += '<div style="margin-bottom:14px"><label class="form-l">Link (Drive, Dropbox, OneDrive, etc.)</label><input class="form-i" id="dv-url" placeholder="https://..."></div>';
   html += '<div><label class="form-l">Notes</label><textarea class="form-i" id="dv-notes" rows="3"></textarea></div>';
   html += '</div>';
-  html += '<div class="modal-f"><button class="btn" onclick="closeDocModal()">Cancel</button><button class="btn btn-gold" onclick="saveNewDoc(\''+personId+'\')">Add document</button></div>';
+  html += '<div class="modal-f"><button class="btn" onclick="closeDocModal()">Cancel</button><button class="btn btn-gold" id="dv-save-btn" onclick="saveNewDoc(\''+personId+'\')">Add document</button></div>';
   html += '</div></div>';
   document.getElementById('modal-root').innerHTML = html;
 }
@@ -19255,25 +19495,99 @@ function closeDocModal(){
   document.getElementById('modal-root').innerHTML = '';
   if(openPersonId) renderProfileDrawer();
 }
+/* v86: File Storage Contract v1 seam. The module consumes
+   window.SMB_FILES.upload(file, meta) -> Promise<{url, name, size}>
+   when a provider is mounted (staging: Firebase Storage provider in
+   the deployed index.html; production: Anand's Backblaze B2 backend).
+   With no provider mounted, the file row explains and the link path
+   stays the fallback, so the gated module works standalone. */
+function _smbFilesReady(){ return !!(window.SMB_FILES && typeof window.SMB_FILES.upload === 'function'); }
+function _docFileRow(inputId, existingName){
+  var h = '<div style="margin-bottom:14px"><label class="form-l">'+(existingName ? 'Replace file' : 'File')+'</label>';
+  if(_smbFilesReady()){
+    h += '<input type="file" class="form-i" id="'+inputId+'" style="padding:7px 10px">';
+    h += '<div class="kpi-card-sub" style="margin-top:4px">'+(existingName ? 'Current file: '+escapeHTML(existingName)+'. Choosing a new file replaces it on save.' : 'PDF, image, or document up to 25 MB. Uploaded to tenant-isolated storage; the link field below stays available as an alternative.')+'</div>';
+  } else {
+    h += '<div style="padding:9px 12px;background:var(--sur2);border-radius:6px;color:var(--txm);font-size:var(--fz-base)">Direct file upload arrives with the file-storage backend. Until then, paste a link below.</div>';
+  }
+  h += '</div>';
+  return h;
+}
+function _docUploadIfChosen(inputId, personId, scope){
+  // Returns a Promise resolving to {url, fileName, size} when a file was
+  // chosen and uploaded, or null when no file was chosen.
+  var el = document.getElementById(inputId);
+  var file = el && el.files && el.files[0];
+  if(!file) return Promise.resolve(null);
+  if(!_smbFilesReady()) return Promise.resolve(null);
+  if(file.size > 25*1024*1024){ return Promise.reject(new Error('File is over the 25 MB limit.')); }
+  return window.SMB_FILES.upload(file, {tenantId:(window.SMB_TENANT&&window.SMB_TENANT.tenantId)||'lida-001', personId:personId, scope:scope||'hr-docs'})
+    .then(function(res){ return {url:res.url, fileName:res.name||file.name, size:res.size||file.size}; });
+}
+/* v87: pick-and-fill upload. Opens a file picker, uploads through the
+   SMB_FILES contract, and writes the resulting URL into a target text
+   input (used by Company documents rows, the Benefits booklet field,
+   and the Application template). The URL field stays the source of
+   truth so the surface works identically for pasted links and
+   uploaded files. */
+function smbFilesPickAndFill(targetInputId, scope, personId, btn){
+  if(!_smbFilesReady()){ toast('Upload not connected','Direct file upload arrives with the file-storage backend. Paste a link instead.','info'); return; }
+  var picker = document.createElement('input');
+  picker.type = 'file';
+  picker.style.display = 'none';
+  picker.onchange = function(){
+    var file = picker.files && picker.files[0];
+    if(!file) return;
+    if(file.size > 25*1024*1024){ toast('Too large','File is over the 25 MB limit.','error'); return; }
+    var prev = btn ? btn.textContent : '';
+    if(btn){ btn.disabled = true; btn.textContent = 'Uploading...'; }
+    window.SMB_FILES.upload(file, {tenantId:(window.SMB_TENANT&&window.SMB_TENANT.tenantId)||'lida-001', personId:personId||'company', scope:scope})
+      .then(function(res){
+        var t = document.getElementById(targetInputId);
+        if(t){ t.value = res.url; t.setAttribute('data-uploaded-name', res.name||file.name); }
+        if(btn){ btn.disabled = false; btn.textContent = 'Uploaded: '+(res.name||file.name).slice(0,24); }
+        toast('File uploaded', (res.name||file.name)+' is in. Save to keep it.', 'success');
+      })
+      .catch(function(err){
+        if(btn){ btn.disabled = false; btn.textContent = prev || 'Upload file'; }
+        toast('Upload failed', (err && err.message) || 'Try again or paste a link.', 'error');
+      });
+    if(picker.parentNode) picker.parentNode.removeChild(picker);
+  };
+  document.body.appendChild(picker);
+  picker.click();
+}
+function _uploadBtnHtml(targetInputId, scope, personId){
+  if(!_smbFilesReady()) return '';
+  return '<button type="button" class="btn btn-sm" style="flex-shrink:0" onclick="smbFilesPickAndFill(\''+targetInputId+'\',\''+scope+'\',\''+(personId||'company')+'\',this)">Upload file</button>';
+}
 function saveNewDoc(personId){
   var p = ppl.find(function(x){return x.id===personId});
   if(!p) return;
   var title = document.getElementById('dv-title').value.trim();
   if(!title){ toast('Missing title','Document title is required.','error'); return; }
-  var doc = {
-    id:'doc'+Date.now(),
-    title:title,
-    category:document.getElementById('dv-cat').value,
-    uploadedDate:document.getElementById('dv-date').value || todayISO(),
-    url:document.getElementById('dv-url').value.trim(),
-    notes:document.getElementById('dv-notes').value.trim()
-  };
-  if(!p.documents) p.documents = [];
-  p.documents.push(doc);
-  save();
-  if(typeof logActivity === 'function') logActivity('Document added: '+p.first+' '+p.last+' - '+title);
-  closeDocModal();
-  toast('Document added', title+' added to '+p.first+' '+p.last+'.', 'success');
+  var btn = document.getElementById('dv-save-btn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Saving...'; }
+  _docUploadIfChosen('dv-file', personId).then(function(up){
+    var doc = {
+      id:'doc'+Date.now(),
+      title:title,
+      category:document.getElementById('dv-cat').value,
+      uploadedDate:document.getElementById('dv-date').value || todayISO(),
+      url:(up && up.url) || document.getElementById('dv-url').value.trim(),
+      notes:document.getElementById('dv-notes').value.trim()
+    };
+    if(up){ doc.fileName = up.fileName; doc.size = up.size; doc.storage = 'smb-files'; }
+    if(!p.documents) p.documents = [];
+    p.documents.push(doc);
+    save();
+    if(typeof logActivity === 'function') logActivity('Document added: '+p.first+' '+p.last+' - '+title+(up?' (file uploaded: '+up.fileName+')':''));
+    closeDocModal();
+    toast('Document added', title+(up?' uploaded and':'')+' added to '+p.first+' '+p.last+'.', 'success');
+  }).catch(function(err){
+    if(btn){ btn.disabled = false; btn.textContent = 'Add document'; }
+    toast('Upload failed', (err && err.message) || 'The file could not be uploaded. Check the connection and try again, or paste a link instead.', 'error');
+  });
 }
 function openEditDoc(personId, docId){
   var p = ppl.find(function(x){return x.id===personId});
@@ -19290,11 +19604,12 @@ function openEditDoc(personId, docId){
   html += '</select></div>';
   html += '<div><label class="form-l">Date</label><input type="date" class="form-i" id="de-date" value="'+(d.uploadedDate||'')+'"></div>';
   html += '</div>';
+  html += _docFileRow('de-file', d.fileName);
   html += '<div style="margin-bottom:14px"><label class="form-l">Link</label><input class="form-i" id="de-url" value="'+escapeHTML(d.url||'')+'"></div>';
   html += '<div><label class="form-l">Notes</label><textarea class="form-i" id="de-notes" rows="3">'+escapeHTML(d.notes||'')+'</textarea></div>';
   html += '</div>';
   html += '<div class="modal-f"><button class="btn btn-red" onclick="deleteDoc(\''+personId+'\',\''+docId+'\')">Delete</button>';
-  html += '<div style="display:flex;gap:8px"><button class="btn" onclick="closeDocModal()">Cancel</button><button class="btn btn-gold" onclick="saveEditDoc(\''+personId+'\',\''+docId+'\')">Save</button></div>';
+  html += '<div style="display:flex;gap:8px"><button class="btn" onclick="closeDocModal()">Cancel</button><button class="btn btn-gold" id="de-save-btn" onclick="saveEditDoc(\''+personId+'\',\''+docId+'\')">Save</button></div>';
   html += '</div></div></div>';
   document.getElementById('modal-root').innerHTML = html;
 }
@@ -19303,15 +19618,23 @@ function saveEditDoc(personId, docId){
   if(!p) return;
   var d = (p.documents||[]).find(function(x){return x.id===docId});
   if(!d) return;
-  d.title = document.getElementById('de-title').value.trim();
-  d.category = document.getElementById('de-cat').value;
-  d.uploadedDate = document.getElementById('de-date').value;
-  d.url = document.getElementById('de-url').value.trim();
-  d.notes = document.getElementById('de-notes').value.trim();
-  save();
-  if(typeof logActivity === 'function') logActivity('Document updated: '+p.first+' '+p.last+' - '+d.title);
-  closeDocModal();
-  toast('Document saved', d.title+' updated.', 'success');
+  var btn = document.getElementById('de-save-btn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Saving...'; }
+  _docUploadIfChosen('de-file', personId).then(function(up){
+    d.title = document.getElementById('de-title').value.trim();
+    d.category = document.getElementById('de-cat').value;
+    d.uploadedDate = document.getElementById('de-date').value;
+    d.url = (up && up.url) || document.getElementById('de-url').value.trim();
+    d.notes = document.getElementById('de-notes').value.trim();
+    if(up){ d.fileName = up.fileName; d.size = up.size; d.storage = 'smb-files'; }
+    save();
+    if(typeof logActivity === 'function') logActivity('Document updated: '+p.first+' '+p.last+' - '+d.title+(up?' (file replaced: '+up.fileName+')':''));
+    closeDocModal();
+    toast('Document saved', d.title+' updated.', 'success');
+  }).catch(function(err){
+    if(btn){ btn.disabled = false; btn.textContent = 'Save'; }
+    toast('Upload failed', (err && err.message) || 'The file could not be uploaded. The document was not saved.', 'error');
+  });
 }
 function deleteDoc(personId, docId){
   var p = ppl.find(function(x){return x.id===personId});
@@ -19916,6 +20239,48 @@ window.SMB_HR_onDocumentSigned = function(payload){
 };
 </script>
 
+<script>
+/* SMB HR STAGING FILES PROVIDER v1 (staging-only; not in gated source).
+   Implements the window.SMB_FILES contract the module consumes
+   (HR v86 File Storage Contract v1 seam) against Firebase Storage on
+   the shared staging project, so real document uploads work on the
+   GitHub Pages team-testing deployment. Anand's Backblaze B2 backend
+   replaces this provider in production; the module does not change.
+   NOTE: if uploads fail with 404, the bucket name below does not match
+   the one shown in Firebase Console -> Storage; correct the one
+   constant. Same expiring-rules gotcha as the Realtime Database:
+   Storage test-mode rules expire monthly and must be extended in the
+   console alongside the database rule. */
+(function(){
+  var BUCKET = 'smb-staging-666a3.firebasestorage.app';
+  var MAX_BYTES = 25 * 1024 * 1024;
+  window.SMB_FILES = {
+    provider: 'firebase-staging',
+    upload: function(file, meta){
+      if(!file) return Promise.reject(new Error('No file.'));
+      if(file.size > MAX_BYTES) return Promise.reject(new Error('File is over the 25 MB limit.'));
+      var tenant = (meta && meta.tenantId) || 'lida-001';
+      var scope = (meta && meta.scope) || 'hr-docs';
+      var person = (meta && meta.personId) || 'misc';
+      var safe = String(file.name || 'file').replace(/[^\w.\-]+/g, '_').slice(0, 120);
+      var path = scope + '/' + tenant + '/' + person + '/' + Date.now() + '-' + safe;
+      var url = 'https://firebasestorage.googleapis.com/v0/b/' + BUCKET + '/o?uploadType=media&name=' + encodeURIComponent(path);
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        body: file
+      }).then(function(r){
+        if(!r.ok) throw new Error('Upload failed (' + r.status + '). If this persists, check the Storage bucket name and that Storage rules have not expired.');
+        return r.json();
+      }).then(function(j){
+        var token = String(j.downloadTokens || '').split(',')[0];
+        var dl = 'https://firebasestorage.googleapis.com/v0/b/' + BUCKET + '/o/' + encodeURIComponent(j.name) + '?alt=media' + (token ? '&token=' + token : '');
+        return { url: dl, name: file.name, size: file.size };
+      });
+    }
+  };
+})();
+</script>
 <script>
 /* SMB HR STAGING ADAPTER v2.1 (staging-only; not in gated source; not audited).
    Ported from the working SMB VSP Staging Adapter v2.1 so HR gets the same
